@@ -39,7 +39,7 @@ async function announce(subject: typeof subjects[0], period: string) {
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
 	const embed = new MessageEmbed({
 		author: { name: 'Class Starting' },
-		title: `${subject.name}` + subject.subid ? `(${subject.subid})` : '',
+		title: `${subject.name}` + (subject.subid ? `(${subject.subid})` : ''),
 		description: `คาบ ${period} เริ่มแล้ว! (${periods_begin[period]} น. - ${periods_end[period]} น.)\n\n${link}`,
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)) + 0,
 	})
