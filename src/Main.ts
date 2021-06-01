@@ -14,7 +14,7 @@ async function initilize() {
 	channel = guild.channels.cache.get(CONFIG.channelId) as TextChannel;
 }
 
-const periods: { [key: string]: string } = {
+const periods_begin: { [key: string]: string } = {
 	'1': '8:30',
 	'2': '9:20',
 	'3': '10:20',
@@ -24,13 +24,23 @@ const periods: { [key: string]: string } = {
 	'7': '14:50'
 }
 
+const periods_end: { [key: string]: string } = {
+	'1': '9:20',
+	'2': '10:10',
+	'3': '11:10',
+	'4': '12:00',
+	'5': '13:50',
+	'6': '14:50',
+	'7': '15:40'
+}
+
 async function announce(subject: typeof subjects[0], period: string) {
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
 	const embed = new MessageEmbed({
 		author: { name: 'Class Starting' },
 		title: `${subject.name} (${subject.subid})`,
-		description: `คาบ ${period} เริ่มแล้ว! (${periods[period]} น.)\n\n${link}`,
+		description: `คาบ ${period} เริ่มแล้ว! (${periods_begin[period]} น. - ${periods_end[period]} น.)\n\n${link}`,
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)) + 0,
 	})
 	channel.send('<@&800971217908793384>', embed)
@@ -44,7 +54,7 @@ bot.once('ready', async () => {
 	subjects.forEach(subject => {
 		subject.classes.forEach(c => {
 			const [DoW, period] = c.split(' ');
-			const [hour, min] = periods[period].split(':');
+			const [hour, min] = periods_begin[period].split(':');
 			schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
 				announce(subject, period);
 			});
