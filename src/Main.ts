@@ -165,10 +165,10 @@ bot.on('message', async msg => {
 			})
 			const desc_reaction_promise = refmsg.awaitReactions((r: MessageReaction, u: User) => r.emoji.id == '845520716715917314' && u.id == msg.author.id, { maxEmojis: 1 }).then(_r => {
 				if (received_desc) return;
-				refmsg.reactions.removeAll();
 				description = null;
 			})
 			await Promise.race([desc_reply_promise, desc_reaction_promise]);
+			refmsg.reactions.removeAll();
 
 			// ------------------------- Input Done yayyyy !!! -------------------------
 
