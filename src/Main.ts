@@ -154,7 +154,7 @@ bot.on('message', async msg => {
 				description: `หัวข้อการบ้าน: "${title}"\nวิชา:"${sub.name} (${sub.subID})" \n\n**กรุณาใส่ __ข้อมูลเพิ่มเติม__ ลงในแชท** (กดลูกศรเพื่อข้ามได้)`,
 				color: CONFIG.color.blue
 			}))
-			refmsg.react('845520716715917314');
+			const reaction = refmsg.react('845520716715917314');
 
 			let received_desc = false;
 			const desc_reply_promise = channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1 }).then(_m => {
@@ -168,7 +168,7 @@ bot.on('message', async msg => {
 				description = null;
 			})
 			await Promise.race([desc_reply_promise, desc_reaction_promise]);
-			refmsg.reactions.removeAll();
+			(await reaction).remove();
 
 			// ------------------------- Input Done yayyyy !!! -------------------------
 
