@@ -1,110 +1,110 @@
 [
 	{
-		"subid": "ว30207",
+		"subID": "ว30207",
 		"name": "การเคลื่อนที่แบบพีริออดิกและไฟฟ้าสถิตขั้นสูง",
 		"msteam": "",
-		"classes": ["1 1", "3 7"]
+		"classes": ["1 1", "1 2", "3 7"]
 	},
 	{
-		"subid": "ว30106",
+		"subID": "ว30106",
 		"name": "เทคโนโลยีการวิเคราะห์ข้อมูล",
 		"msteam": "",
 		"classes": ["1 3"]
 	},
 	{
-		"subid": "อ30103",
+		"subID": "อ30103",
 		"name": "ภาษาอังกฤษพื้นฐาน 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3a574e90def96d4782964101cfacecef52%40thread.tacv2/M.51?groupId=06a25139-29c0-4292-b6ea-baf277d299f5&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["1 4", "2 1"]
 	},
 	{
-		"subid": "พ30103",
+		"subID": "พ30103",
 		"name": "สุขศึกษาและพลศึกษาพื้นฐาน",
-		"msteam": "",
+		"msteam": "https://teams.microsoft.com/l/channel/19%3aBF39jMF5cQbnqCWFJRa5D3eLO4JTzOHMi-FKU3-LP_A1%40thread.tacv2/General?groupId=96a870d7-bdbb-44d9-a234-a9dae76a98bc&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["1 5"]
 	},
 	{
-		"subid": "ส30103",
+		"subID": "ส30103",
 		"name": "สังคมศึกษาฯ พื้นฐาน 3",
 		"msteam": "",
 		"classes": ["1 6"]
 	},
 	{
-		"subid": "ท30103",
+		"subID": "ท30103",
 		"name": "ภาษาไทยพื้นฐาน 3",
 		"msteam": "",
 		"classes": ["1 7", "4 1"]
 	},
 	{
-		"subid": "MA30103",
+		"subID": "MA30103",
 		"name": "Foundation Mathematics 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3ae1fd53e0998a49efb3b8c3c5d1821fea%40thread.tacv2/live%2520%25E0%25B8%25A1.5_1?groupId=68dded9b-cf1f-41ab-82d9-648629ba42e0&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["2 2"]
 	},
 	{
-		"subid": "ว30247",
+		"subID": "ว30247",
 		"name": "สรีรวิทยาสัตว์",
 		"msteam": "",
-		"classes": ["2 3", "5 5"]
+		"classes": ["2 3", "2 4", "5 5"]
 	},
 	{
-		"subid": "SO30103",
+		"subID": "SO30103",
 		"name": "Foundation Social Studies, Religion and Culture",
 		"msteam": "",
 		"classes": ["2 5"]
 	},
 	{
-		"subid": "ง30105",
+		"subID": "ง30105",
 		"name": "การงานอาชีพพื้นฐาน 2",
 		"msteam": "",
 		"classes": ["2 6"]
 	},
 	{
-		"subid": "",
+		"subID": "ก30003",
 		"name": "แนะแนว",
 		"msteam": "",
 		"classes": ["2 7"]
 	},
 	{
-		"subid": "ค30209",
+		"subID": "ค30209",
 		"name": "คณิตศาสตร์ขั้นสูง 3",
 		"msteam": "",
-		"classes": ["3 1", "4 4"]
+		"classes": ["3 1", "3 2", "4 4"]
 	},
 	{
-		"subid": "ว30227",
+		"subID": "ว30227",
 		"name": "เคมีขั้นสูง 2",
-		"msteam": "",
-		"classes": ["3 3", "4 5"]
+		"msteam": "https://teams.microsoft.com/l/channel/19%3al2kOauGzSVwSCwjIuoGedXImh_HHnkZgbWJzKQ0LOEw1%40thread.tacv2/General?groupId=12f335cc-d377-4f64-9206-cb330aac074e&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
+		"classes": ["3 3", "3 4", "4 5"]
 	},
 	{
-		"subid": "ส30109",
+		"subID": "ส30109",
 		"name": "ประวัติศาสตร์ 3",
 		"msteam": "",
 		"classes": ["3 5"]
 	},
 	{
-		"subid": "อ30233",
+		"subID": "อ30233",
 		"name": "ภาษาอังกฤษเชิงวิชาการ 3",
 		"msteam": "",
 		"classes": ["3 6", "4 2"]
 	},
 	{
-		"subid": "ว30261",
+		"subID": "ว30261",
 		"name": "โลก ดาราศาสตร์ และอวกาศ",
 		"msteam": "",
 		"classes": ["4 6", "5 2"]
 	},
 	{
-		"subid": "ศ30105",
+		"subID": "ศ30105",
 		"name": "ศิลปะพื้นฐาน 5",
 		"msteam": "",
 		"classes": ["5 4"]
 	},
 	{
-		"subid": "อ30215",
+		"subID": "อ30215",
 		"name": "ภาษาอังกฤษพื่อการประยุกต์ 3",
-		"msteam": "",
+		"msteam": "https://teams.microsoft.com/l/channel/19%3acaafd3c021f543689cf085aff807649d%40thread.tacv2/M5_1?groupId=50e0f6f3-84fe-47ea-a746-17d135ec2ae5&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["5 6"]
 	}
 ]

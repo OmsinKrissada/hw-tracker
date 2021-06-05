@@ -1,18 +1,27 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
-@Entity({ synchronize: false })
+@Entity({ synchronize: true })
 export class Homework {
 
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column()
-	subject: number //subject id
+	@Column({ type: "varchar", length: 7 })
+	subID: string
 
 	@Column()
 	name: string;
 
-	@Column()
-	duedate: Date;
+	@Column({ nullable: true })
+	description: string;
+
+	@Column({ type: 'date', nullable: true })
+	dueDate: Date;
+
+	@Column({ type: 'time', nullable: true })
+	dueTime: Date;
+
+	@Column({ type: "varchar", length: 18 })
+	author: string; // Discord user id
 
 }
