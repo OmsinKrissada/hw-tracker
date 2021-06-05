@@ -70,7 +70,7 @@ async function getSubjectFromName(partialName: string, caller: User, channel: Te
 	let matched: typeof subjects = [];
 	let sub: typeof subjects[0];
 	for (const key in subjects) {
-		if (subjects[key].name.includes(partialName.toLowerCase())) {
+		if (subjects[key].name.toLowerCase().includes(partialName.toLowerCase())) {
 			matched.push(subjects[key])
 			console.log('found match')
 		}
