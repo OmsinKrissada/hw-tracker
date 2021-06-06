@@ -65,7 +65,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 			}
 		}
 		else if (reaction.emoji.name == '⏭') {
-			message.reactions.resolve('⏭')!.users.remove(user);
+			reaction.remove();
 			if (current_page + 1 < pages.length) {
 				message.edit(pages[pages.length - 1]);
 				current_page = pages.length - 1;
@@ -89,7 +89,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 			});
 		}
 		else {
-			message.reactions.resolve(reaction.emoji.name)!.users.remove(user);
+			message.reactions.resolve(reaction.emoji.name).users.remove(user);
 		}
 	})
 	collector.on('end', () => {
