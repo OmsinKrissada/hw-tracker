@@ -5,8 +5,8 @@
 	"main": "dist/Main.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "tsc && node ./dist/src/Main.js",
-		"start-nobuild": "node ./dist/src/Main.js",
+		"start": "tsc && node ./dist/Main.js",
+		"start-nobuild": "node ./dist/Main.js",
 		"dev": "ts-node-dev --respawn ./src/Main.ts",
 		"build": "tsc"
 	},
