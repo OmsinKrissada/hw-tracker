@@ -271,7 +271,7 @@ bot.on('message', async msg => {
 
 async function initilize() {
 	guild = await bot.guilds.fetch(CONFIG.guildId);
-	channel = guild.channels.cache.get(CONFIG.channelId) as TextChannel;
+	channel = guild.channels.resolve(CONFIG.channelId) as TextChannel;
 }
 
 bot.once('ready', async () => {
