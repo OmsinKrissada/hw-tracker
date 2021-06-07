@@ -10,7 +10,7 @@ export const HomeworkConnection = createConnection({
 	"password": "fioeioewfioewadfefw2432432323f3wf",
 	"database": "hw_tracker",
 	"synchronize": true,
-	"logging": true,
+	"logging": false,
 	"charset": "utf8mb4",
 	"entities": [Homework],
 }).then(connection => {

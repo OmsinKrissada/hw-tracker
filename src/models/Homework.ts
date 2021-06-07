@@ -19,7 +19,7 @@ export class Homework {
 	dueDate: Date;
 
 	@Column({ type: 'time', nullable: true })
-	dueTime: Date;
+	dueTime: string;
 
 	@Column({ type: "varchar", length: 18 })
 	author: string; // Discord user id

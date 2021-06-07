@@ -106,7 +106,10 @@ bot.on('message', async msg => {
 					.map(hw => {
 						i++;
 						let format;
+						let dueTimestamp: Date;
 						if (hw.dueTime) {
+							const [hours, mins, secs] = hw.dueTime.split(':');
+							hw.dueDate.setHours(+hours, +mins, +secs);
 							format = {
 								sameDay: '[วันนี้ เวลา] HH:mm:ss',
 								nextDay: '[พรุ่งนี้ เวลา] HH:mm:ss',
