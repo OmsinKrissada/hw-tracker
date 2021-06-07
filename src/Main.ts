@@ -111,12 +111,12 @@ bot.on('message', async msg => {
 							const [hours, mins, secs] = hw.dueTime.split(':');
 							hw.dueDate.setHours(+hours, +mins, +secs);
 							format = {
-								sameDay: '[วันนี้ เวลา] HH:mm:ss',
-								nextDay: '[พรุ่งนี้ เวลา] HH:mm:ss',
-								nextWeek: 'dddd[นี้ เวลา] HH:mm:ss',
-								lastDay: '[เมื่อวานนี้ เวลา] HH:mm:ss',
-								lastWeek: 'dddd[ที่แล้ว เวลา] HH:mm:ss',
-								sameElse: 'DD/MM/YYYY [เวลา] HH:mm:ss'
+								sameDay: '[วันนี้ เวลา] HH:mm:ss น.',
+								nextDay: '[พรุ่งนี้ เวลา] HH:mm:ss น.',
+								nextWeek: 'dddd[นี้ เวลา] HH:mm:ss น.',
+								lastDay: '[เมื่อวานนี้ เวลา] HH:mm:ss น.',
+								lastWeek: 'dddd[ที่แล้ว เวลา] HH:mm:ss น.',
+								sameElse: 'DD/MM/YYYY [เวลา] HH:mm:ss น.'
 							};
 						} else {
 							format = {
