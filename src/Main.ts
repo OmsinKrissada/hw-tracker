@@ -245,7 +245,7 @@ bot.on('message', async msg => {
 			} else {
 				channel.send(new MessageEmbed({
 					title: 'Please provide homework ID',
-					description: `Usage: \`${prefix}remove ID\``,
+					description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
 					color: CONFIG.color.red
 				}))
 			}
@@ -285,9 +285,9 @@ bot.once('ready', async () => {
 			schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
 				announce(subject, period);
 			});
-			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
-				announce_upcoming(subject, period);
-			});
+			// schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
+			// 	announce_upcoming(subject, period);
+			// });
 		})
 	})
 
