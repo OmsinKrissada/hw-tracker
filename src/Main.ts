@@ -55,13 +55,16 @@ async function announce(subject: typeof subjects[0], period: string) {
 async function announce_upcoming(subject: typeof subjects[0], period: string) {
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
-	const embed = new MessageEmbed({
-		author: { name: '🔺 Upcoming class' },
-		title: `${subject.name}` + (subject.subID ? `(${subject.subID})` : ''),
-		description: `คาบ ${period} กำลังจะเริ่ม! (${periods_begin[period]} น. - ${periods_end[period]} น.)\n\n${link}`,
-		color: Math.floor(Math.random() * (16777215 - 0 + 1)) + 0,
-	})
-	channel.send('<@&849534560668352542>', embed).then(msg => {
+	// const embed = new MessageEmbed({
+	// 	author: { name: '🔺 Upcoming class' },
+	// 	title: `${subject.name}` + (subject.subID ? `(${subject.subID})` : ''),
+	// 	description: `คาบ ${period} กำลังจะเริ่ม! (${periods_begin[period]} น. - ${periods_end[period]} น.)\n\n${link}`,
+	// 	color: Math.floor(Math.random() * (16777215 - 0 + 1)) + 0,
+	// })
+	// channel.send('<@&849534560668352542>', embed).then(msg => {
+	// 	msg.delete({ timeout: 300000 })
+	// })
+	channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ <@&849534560668352542>`).then(msg => {
 		msg.delete({ timeout: 300000 })
 	})
 }
@@ -288,9 +291,9 @@ bot.once('ready', async () => {
 			schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
 				announce(subject, period);
 			});
-			// schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
-			// 	announce_upcoming(subject, period);
-			// });
+			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
+				announce_upcoming(subject, period);
+			});
 		})
 	})
 
