@@ -64,7 +64,7 @@ async function announce_upcoming(subject: typeof subjects[0], period: string) {
 	// channel.send('<@&849534560668352542>', embed).then(msg => {
 	// 	msg.delete({ timeout: 300000 })
 	// })
-	channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ <@&849534560668352542>`).then(msg => {
+	channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
 		msg.delete({ timeout: 300000 })
 	})
 }
