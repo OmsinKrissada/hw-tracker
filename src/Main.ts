@@ -124,7 +124,7 @@ bot.on('interaction', async interaction => {
 
 
 
-export const prefix = '%';
+export const prefix = 'hw';
 bot.on('message', async msg => {
 	if (msg.author.bot || !msg.content.startsWith(prefix)) return;
 	// msg.channel.send('',{reply:{}})
