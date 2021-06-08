@@ -88,6 +88,7 @@ bot.on('interaction', async interaction => {
 		console.log(interaction.customID)
 		// interaction.defer();
 		interaction.deferUpdate();
+		if (channel.messages.resolve(interaction.message.id).deletable) channel.messages.resolve(interaction.message.id).delete();
 		switch (interaction.customID) {
 			case 'hw_list':
 				console.log('listing')
@@ -159,12 +160,12 @@ bot.on('message', async msg => {
 			}
 			break;
 		default: {
-			channel.send({
-				embed: {
-					title: 'Homework Menu',
-					description: `**กดปุ่มด้านล่าง**\nหรือใช้คำสั่งต่อไปนี้:\n\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
-					color: CONFIG.color.blue,
-				},
+			channel.send('Homework Menu >>', {
+				// embed: {
+				// 	title: 'Homework Menu',
+				// 	description: `**กดปุ่มด้านล่าง**\nหรือใช้คำสั่งต่อไปนี้:\n\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
+				// 	color: CONFIG.color.blue,
+				// },
 				components: [{
 					type: 1,
 					components: [{
