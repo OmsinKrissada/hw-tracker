@@ -1,18 +1,15 @@
-import { Client, Guild, MessageEmbed, MessageReaction, TextChannel, User } from 'discord.js';
+import { Client, DMChannel, Guild, Interaction, MessageComponentInteraction, MessageEmbed, MessageReaction, NewsChannel, TextChannel, User } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment';
 
-import { confirm_type, sendEmbedPage } from './Helper';
+import * as Tracker from './Tracker';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
 
-import { HomeworkRepository } from './DBManager';
-import { Homework } from './models/Homework';
+const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
-const bot = new Client();
-
-let guild: Guild;
-let channel: TextChannel;
+let announce_guild: Guild;
+let announce_channel: TextChannel;
 
 const periods_begin: { [key: string]: string } = {
 	'1': '8:30',
@@ -47,8 +44,10 @@ async function announce(subject: typeof subjects[0], period: string) {
 		description: `คาบ ${period} เริ่มแล้ว! (${periods_begin[period]} น. - ${periods_end[period]} น.)\n\n${link}`,
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)) + 0,
 	})
-	channel.send('<@&849534560668352542>', embed).then(msg => {
-		msg.delete({ timeout: 3600000 })
+	announce_channel.send('<@&849534560668352542>', embed).then(msg => {
+		setTimeout(() => {
+			msg.delete()
+		}, 3600000);
 	})
 }
 
@@ -64,189 +63,92 @@ async function announce_upcoming(subject: typeof subjects[0], period: string) {
 	// channel.send('<@&849534560668352542>', embed).then(msg => {
 	// 	msg.delete({ timeout: 300000 })
 	// })
-	channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
-		msg.delete({ timeout: 300000 })
+	announce_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
+		setTimeout(() => {
+			msg.delete()
+		}, 300000);
 	})
 }
 
 
-async function getSubjectFromName(partialName: string, caller: User, channel: TextChannel) {
-	let matched: typeof subjects = [];
-	let sub: typeof subjects[0];
-	for (const key in subjects) {
-		if (subjects[key].name.toLowerCase().includes(partialName.toLowerCase())) {
-			matched.push(subjects[key])
-			console.log('found match')
+
+
+
+
+
+
+
+bot.on('interaction', async interaction => {
+	// console.log(interaction)
+	const channel = interaction.channel;
+	const user = interaction.user;
+
+	if (interaction.isMessageComponent() && interaction.customID.startsWith('hw') && channel.isText()) {
+		// interaction.reply('reply', { ephemeral: true });
+		console.log(interaction.customID)
+		// interaction.defer();
+		interaction.deferUpdate();
+		switch (interaction.customID) {
+			case 'hw_list':
+				console.log('listing')
+				Tracker.list(channel)
+				break;
+			case 'hw_add':
+				Tracker.add(user, channel)
+				break;
+			case 'hw_remove':
+				await channel.send('Please enter homework ID to delete.');
+				const content = (await channel.awaitMessages(m => m.author.id == user.id, { maxProcessed: 1 })).first()?.content;
+				if (content) {
+					if (isNaN(+content))
+						channel.send(new MessageEmbed({
+							title: 'Not Found',
+							description: `Invalid homework ID: \`${content}\``,
+							color: CONFIG.color.red
+						}))
+					else {
+						Tracker.remove(user, channel, +content)
+					}
+				} else {
+					channel.send(new MessageEmbed({
+						title: 'Please provide homework ID',
+						description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
+						color: CONFIG.color.red
+					}))
+				}
+				break;
 		}
 	}
+})
 
-	if (matched.length > 1) {
-		sub = await confirm_type('คุณหมายถึงวิชาใด', matched, caller, channel, m => `${m.name} (${m.subID})`)
-	} else {
-		sub = matched[0];
-	}
-	return sub;
-}
 
-const prefix = '%';
+
+export const prefix = 'hw';
 bot.on('message', async msg => {
 	if (msg.author.bot || !msg.content.startsWith(prefix)) return;
+	// msg.channel.send('',{reply:{}})
 	const [command, ...args] = msg.content.slice(prefix.length).split(' ');
 	const channel = msg.channel;
+	const user = msg.author;
+
 
 	switch (command.toLowerCase()) {
-		case 'list': {
-			const hws: Homework[] = await HomeworkRepository
-				.createQueryBuilder()
-				.select('*')
-				.addOrderBy('-dueDate', 'DESC')
-				.addOrderBy('-dueTime', 'DESC')
-				.getRawMany();
-			console.log(hws)
-			let i = 0;
-			sendEmbedPage(<TextChannel>channel, new MessageEmbed({ color: CONFIG.color.blue }), 'Homework List',
-				hws
-					.map(hw => {
-						i++;
-						let format;
-						let dueTimestamp: Date;
-						if (hw.dueTime) {
-							const [hours, mins, secs] = hw.dueTime.split(':');
-							hw.dueDate.setHours(+hours, +mins, +secs);
-							format = {
-								sameDay: '[วันนี้ เวลา] HH:mm น.',
-								nextDay: '[พรุ่งนี้ เวลา] HH:mm น.',
-								nextWeek: 'dddd[นี้ เวลา] HH:mm น.',
-								lastDay: '[เมื่อวานนี้ เวลา] HH:mm น.',
-								lastWeek: 'dddd[ที่แล้ว เวลา] HH:mm น.',
-								sameElse: 'DD/MM/YYYY [เวลา] HH:mm น.'
-							};
-						} else {
-							format = {
-								sameDay: '[วันนี้]',
-								nextDay: '[พรุ่งนี้]',
-								nextWeek: 'dddd[นี้]',
-								lastDay: '[เมื่อวานนี้]',
-								lastWeek: 'dddd[ที่แล้ว]',
-								sameElse: 'DD/MM/YYYY'
-							};
-						}
-
-
-						return `-------------------------------------------\nID:\`${hw.id}\` __**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.description ? `${hw.description}` : '*none*'}\n\n**Due**: ${hw.dueDate ? `${moment(hw.dueDate).calendar(format)} ‼` : '*none*'}`;
-					})
-			)
+		case 'list':
+			Tracker.list(channel)
 			break;
-		}
-		case 'add': {
-			let title: string, sub: typeof subjects[0], description: string, dueDate: Date;
-
-			// input topic
-			const refmsg = await channel.send(new MessageEmbed({
-				title: 'Homework Creation Session',
-				description: `**กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท**`,
-				color: CONFIG.color.blue
-			}))
-			await channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1, time: 300000 }).then(_m => {
-				const m = _m.first();
-				title = m.content;
-				if (m.deletable) m.delete();
-			})
-
-			// input subject
-			refmsg.edit(new MessageEmbed({
-				title: 'Homework Creation Session',
-				description: `**หัวข้อการบ้าน**: "${title}"\n\n**กรุณาใส่ __ชื่อวิชา__ ลงในแชท**`,
-				color: CONFIG.color.blue
-			}))
-			await channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1, time: 300000 }).then(async _m => {
-				const m = _m.first();
-				if (m.deletable) m.delete();
-				let subject_name = m.content;
-
-				sub = (await getSubjectFromName(subject_name, msg.author, <TextChannel>msg.channel));
-				console.log('subid: ', sub?.subID)
-				while (!sub) {
-					refmsg.edit(new MessageEmbed({
-						title: 'Homework Creation Session',
-						description: `**ขออภัย, ไม่พบวิชา "${subject_name}"**\nกรุณาเช็คการสะกดคำหรือดูชื่อวิชาจากตารางสอน`,
-						color: CONFIG.color.yellow
-					}))
-					await channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1, time: 300000 }).then(_innerm => {
-						const innerm = _innerm.first();
-						subject_name = innerm.content;
-						if (innerm.deletable) innerm.delete();
-					})
-					sub = await getSubjectFromName(subject_name, msg.author, <TextChannel>msg.channel);
-				}
-
-			})
-
-			// input description
-			refmsg.edit(new MessageEmbed({
-				title: 'Homework Creation Session',
-				description: `หัวข้อการบ้าน: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})" \n\n**กรุณาใส่ __ข้อมูลเพิ่มเติม__ ลงในแชท** (กดลูกศรเพื่อข้ามได้)`,
-				color: CONFIG.color.blue
-			}))
-			const reaction = refmsg.react('845520716715917314');
-
-			let received_desc = false;
-			const desc_reply_promise = channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1, time: 300000 }).then(_m => {
-				if (received_desc) return;
-				const m = _m.first();
-				description = m.content;
-				if (m.deletable) m.delete();
-			})
-			const desc_reaction_promise = refmsg.awaitReactions((r: MessageReaction, u: User) => r.emoji.id == '845520716715917314' && u.id == msg.author.id, { maxEmojis: 1, time: 300000 }).then(_r => {
-				if (received_desc) return;
-				description = null;
-			})
-			await Promise.race([desc_reply_promise, desc_reaction_promise]);
-			if (msg.member.hasPermission('MANAGE_MESSAGES'))
-				refmsg.reactions.removeAll();
-
-			// ------------------------- Input Done yayyyy !!! -------------------------
-
-			HomeworkRepository.insert({ name: title, subID: sub.subID, description: description, author: msg.author.id }).then(() => {
-				refmsg.edit(new MessageEmbed({
-					title: '<:checkmark:849685283459825714> Homework Creation Success',
-					description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${description ? `**ข้อมูลเพิ่มเติม**: ${description}` : ''}`,
-					color: CONFIG.color.green
-				}))
-			})
-
-			/*
-			refmsg.edit(new MessageEmbed({
-				title: 'Homework Creation Session',
-				description: `หัวข้อการบ้าน: "${title}"\nวิชา:"${sub.name} (${sub.subID})"\nข้อมูลเพิ่มเติม:"${description}" \n\n**กรุณาใส่ __วันส่ง__ ลงในแชท**`,
-				color: CONFIG.color.blue
-			}))
-			await channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1 }).then(_m => {
-				const m = _m.first();
-				// subID = m.content;
-				if (m.deletable) m.delete();
-			})
-			*/
-
+		case 'add':
+			Tracker.add(user, channel)
 			break;
-		}
-		case 'remove': {
+		case 'remove':
 			if (args[0]) {
-				if (isNaN(+args[0]) || await HomeworkRepository.count({ id: +args[0] }) < 1)
+				if (isNaN(+args[0]))
 					channel.send(new MessageEmbed({
 						title: 'Not Found',
-						description: `Cannot find homework with ID: \`${args[0]}\``,
+						description: `Invalid homework ID: \`${args[0]}\``,
 						color: CONFIG.color.red
 					}))
 				else {
-					const hw = await HomeworkRepository.findOne({ id: +args[0] });
-					await HomeworkRepository.remove(hw);
-					console.log(`deleted ${args[0]}`)
-					channel.send(new MessageEmbed({
-						title: '🗑️ Homework Deleted',
-						description: `__**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.description ? `${hw.description}` : '*none*'}\n\n**Due**: ${hw.dueDate ? `${hw.dueDate}` : '*none*'}`,
-						color: CONFIG.color.green
-					}))
+					Tracker.remove(user, channel, +args[0])
 				}
 			} else {
 				channel.send(new MessageEmbed({
@@ -255,17 +157,36 @@ bot.on('message', async msg => {
 					color: CONFIG.color.red
 				}))
 			}
-
-
 			break;
-		}
 		default: {
-
-			channel.send(new MessageEmbed({
-				title: 'ไม่รู้จักคำสั่งนี้',
-				description: `คำสั่งที่ใช้ได้ ได้แก่:\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
-				color: CONFIG.color.red
-			}))
+			channel.send({
+				embed: {
+					title: 'Homework Menu',
+					description: `**กดปุ่มด้านล่าง**\nหรือใช้คำสั่งต่อไปนี้:\n\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
+					color: CONFIG.color.blue,
+				},
+				components: [{
+					type: 1,
+					components: [{
+						type: 2,
+						label: 'List Homework',
+						style: 1,
+						customID: 'hw_list'
+					},
+					{
+						type: 2,
+						label: 'Add Homework',
+						style: 2,
+						customID: 'hw_add'
+					},
+					{
+						type: 2,
+						label: 'Remove Homework',
+						style: 2,
+						customID: 'hw_remove'
+					}]
+				}]
+			})
 		}
 	}
 
@@ -276,8 +197,9 @@ bot.on('message', async msg => {
 
 
 async function initilize() {
-	guild = await bot.guilds.fetch(CONFIG.guildId);
-	channel = guild.channels.resolve(CONFIG.channelId) as TextChannel;
+
+	announce_guild = await bot.guilds.fetch(<any>CONFIG.guildId);
+	announce_channel = announce_guild.channels.resolve(<any>CONFIG.channelId) as TextChannel;
 }
 
 bot.once('ready', async () => {

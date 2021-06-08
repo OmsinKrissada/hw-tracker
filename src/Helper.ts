@@ -1,4 +1,4 @@
-import { TextChannel, MessageEmbed, MessageReaction, User, Message } from "discord.js";
+import { TextChannel, MessageEmbed, MessageReaction, User, Message, MessageActionRowComponentResolvable, MessageComponent, MessageComponentInteraction } from "discord.js";
 import ConfigManager from "./ConfigManager";
 
 
@@ -10,6 +10,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 	let pages: MessageEmbed[] = [];
 	while (value.length > 0) {
 		let page = new MessageEmbed(prototype);
+		page.setTimestamp();
 		let val = '';
 
 		if (value[0].length > 1024) { // Catch when value tooooo long
@@ -32,68 +33,103 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 
 
 	let current_page = 0;
-	const message = await textChannel.send(pages[0]);
+	const page_components: MessageActionRowComponentResolvable[] = [];
 
 	if (pages.length > 1) {
-		if (pages.length > 2) message.react('⏮').catch(() => { });
-		message.react('◀').catch(() => { });
-		message.react('▶').catch(() => { });
-		if (pages.length > 2) message.react('⏭').catch(() => { });
-		if (pages.length > 4) message.react('📝').catch(() => { })
+		if (pages.length > 2) page_components.push({
+			type: 2,
+			style: 2,
+			label: '◀ First',
+			customID: 'page_first'
+		})
+		page_components.push({
+			type: 2,
+			style: 2,
+			label: '◀',
+			customID: 'page_previous'
+		})
+		page_components.push({
+			type: 2,
+			style: 2,
+			label: '▶',
+			// emoji: { name: 'join_arrow', id: '845520716715917314' },
+			customID: 'page_next'
+		})
+		if (pages.length > 2) page_components.push({
+			type: 2,
+			style: 2,
+			label: 'Last ▶',
+			customID: 'page_last'
+		})
+		if (pages.length > 4) page_components.push({
+			type: 2,
+			style: 2,
+			label: '📝 Custom page',
+			customID: 'page_choose'
+		})
 	}
 
+	const message = await textChannel.send({
+		embed: pages[0],
+		components: [{
+			type: 1,
+			components: page_components
+		}]
+	});
 
-	const collector = message.createReactionCollector((_reaction: MessageReaction, user: User) => !user.bot, { time: 1000000 })
-	collector.on('collect', (reaction, user) => {
-		if (reaction.emoji.name == '◀') {
-			message.reactions.resolve('◀')!.users.remove(user);
+	const collector = message.createMessageComponentInteractionCollector(interaction => interaction.customID.startsWith('page'))//, { idle: 900000 }
+	collector.on('collect', interaction => {
+		const customID = interaction.customID;
+		const user = interaction.user;
+		if (customID === 'page_previous') {
 			if (current_page + 1 > 1) {
 				message.edit(pages[--current_page]);
 			}
 		}
-		else if (reaction.emoji.name == '▶') {
-			message.reactions.resolve('▶')!.users.remove(user);
+		else if (customID === 'page_next') {
 			if (current_page + 1 < pages.length) {
 				message.edit(pages[++current_page]);
 			}
 		}
-		else if (reaction.emoji.name == '⏮') {
-			message.reactions.resolve('⏮')!.users.remove(user);
+		else if (customID === 'page_first') {
 			if (current_page + 1 > 1) {
 				message.edit(pages[0]);
 				current_page = 0;
 			}
 		}
-		else if (reaction.emoji.name == '⏭') {
-			reaction.remove();
+		else if (customID === 'page_last') {
 			if (current_page + 1 < pages.length) {
 				message.edit(pages[pages.length - 1]);
 				current_page = pages.length - 1;
 			}
 		}
-		else if (reaction.emoji.name == '📝') {
-			message.reactions.resolve('📝')!.users.remove(user);
+		else if (customID === 'page_choose') {
 			message.channel.send(new MessageEmbed({ author: { name: 'Type page number in chat >>>', iconURL: user.displayAvatarURL() } })).then(ask4pagemsg => {
 				message.channel.awaitMessages((responsemsg: Message) => responsemsg.author.id == user.id, { max: 1, time: 60000 }).then(msg => {
 					const text = msg.first().content;
 					if (!isNaN(+text) && +text >= 1 && +text <= pages.length) {
 						message.edit(pages[+text - 1])
+						current_page = +text - 1;
 					} else {
-						msg.first().reply('Unknown page').then(unknownmsg => unknownmsg.delete({ timeout: 5000 }));
+						msg.first().reply('Unknown page').then(unknownmsg => {
+							setTimeout(() => {
+								unknownmsg.delete()
+							}, 5000);
+						});
 					}
 					(<TextChannel>message.channel).bulkDelete([ask4pagemsg, msg.first()])
-					msg.first().delete();
-				}).finally(() => {
+				}).catch(() => {
 					if (!ask4pagemsg.deleted) ask4pagemsg.delete();
 				});
 			});
 		}
-		else {
-			message.reactions.resolve(reaction.emoji.name).users.remove(user);
-		}
+		// else {
+		// 	message.reactions.resolve(<any>reaction.emoji.name).users.remove(user);
+		// }
+		interaction.deferUpdate();
 	})
 	collector.on('end', () => {
-		message.reactions.removeAll().catch(() => { });
+		message.components
 	})
 	return message;
 }
