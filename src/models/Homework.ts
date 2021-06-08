@@ -13,7 +13,7 @@ export class Homework {
 	name: string;
 
 	@Column({ nullable: true })
-	description: string;
+	detail: string;
 
 	@Column({ type: 'date', nullable: true })
 	dueDate: Date;

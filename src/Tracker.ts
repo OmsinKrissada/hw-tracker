@@ -65,13 +65,13 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 				}
 
 
-				return `-------------------------------------------\nID:\`${hw.id}\` __**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.description ? `${hw.description}` : '*none*'}\n\n**Due**: ${hw.dueDate ? `${moment(hw.dueDate).calendar(format)} ‼` : '*none*'}`;
+				return `-------------------------------------------\n📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
 			})
 	)
 }
 
 export const add = async (user: User, channel: DMChannel | TextChannel | NewsChannel) => {
-	let title: string, sub: typeof subjects[0], description: string, dueDate: Date;
+	let title: string, sub: typeof subjects[0], detail: string, dueDate: Date;
 
 	// input topic
 	const refmsg = await channel.send(new MessageEmbed({
@@ -126,22 +126,22 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 	const desc_reply_promise = channel.awaitMessages(m => m.author.id == user.id, { maxProcessed: 1, time: 300000 }).then(_m => {
 		if (received_desc) return;
 		const m = _m.first();
-		description = m.content;
+		detail = m.content;
 		if (m.deletable) m.delete();
 	})
 	const desc_reaction_promise = refmsg.awaitReactions((r: MessageReaction, u: User) => r.emoji.id == '845520716715917314' && u.id == user.id, { maxEmojis: 1, time: 300000 }).then(_r => {
 		if (received_desc) return;
-		description = null;
+		detail = null;
 	})
 	await Promise.race([desc_reply_promise, desc_reaction_promise]);
 	// if (msg.member.permissions.has('MANAGE_MESSAGES'))
 	// 	refmsg.reactions.removeAll();
 
 	// Insert to database
-	HomeworkRepository.insert({ name: title, subID: sub.subID, description: description, author: user.id }).then(() => {
+	HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, author: user.id }).then(() => {
 		refmsg.edit(new MessageEmbed({
 			title: '<:checkmark:849685283459825714> Homework Creation Success',
-			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${description ? `**ข้อมูลเพิ่มเติม**: ${description}` : ''}`,
+			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}` : ''}`,
 			color: CONFIG.color.green
 		}))
 	})
@@ -173,7 +173,7 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 		console.log(`deleted ${id}`)
 		channel.send(new MessageEmbed({
 			title: '🗑️ Homework Deleted',
-			description: `__**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.description ? `${hw.description}` : '*none*'}\n\n**Due**: ${hw.dueDate ? `${hw.dueDate}` : '*none*'}`,
+			description: `__**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.detail ?? '*none*'}\n\n**Due**: ${hw.dueDate ? `${hw.dueDate}` : '*none*'}`,
 			color: CONFIG.color.green
 		}))
 	}
