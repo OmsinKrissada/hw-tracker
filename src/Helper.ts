@@ -71,10 +71,10 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 
 	const message = await textChannel.send({
 		embed: pages[0],
-		components: [{
+		components: page_components.length > 1 ? [{
 			type: 1,
 			components: page_components
-		}]
+		}] : []
 	});
 
 	const collector = message.createMessageComponentInteractionCollector(interaction => interaction.customID.startsWith('page'))//, { idle: 900000 }
