@@ -6,6 +6,7 @@ Add a file name `config.yml` into the same directory as `package.json` using the
 token: discord bot token here
 guildId: "guild id here"
 channelId: "channel id here"
+prefix: hw
 
 color:
     red: 0xff0000
