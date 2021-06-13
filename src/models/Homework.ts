@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
 
 @Entity({ synchronize: true })
 export class Homework {
@@ -23,5 +23,8 @@ export class Homework {
 
 	@Column({ type: "varchar", length: 18 })
 	author: string; // Discord user id
+
+	@CreateDateColumn()
+	createdAt: Date;
 
 }

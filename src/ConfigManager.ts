@@ -14,6 +14,7 @@ interface ConfigOption {
 	token: string;
 	guildId: string;
 	channelId: string;
+	prefix: string;
 	color: {
 		red: number;
 		blue: number;

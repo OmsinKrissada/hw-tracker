@@ -3,7 +3,7 @@
 		"subID": "ว30207",
 		"name": "การเคลื่อนที่แบบพีริออดิกและไฟฟ้าสถิตขั้นสูง",
 		"msteam": "",
-		"classes": ["1 1", "1 2", "3 7"]
+		"classes": ["1 1 2", "3 7"]
 	},
 	{
 		"subID": "ว30106",
@@ -15,7 +15,7 @@
 		"subID": "อ30103",
 		"name": "ภาษาอังกฤษพื้นฐาน 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3a574e90def96d4782964101cfacecef52%40thread.tacv2/M.51?groupId=06a25139-29c0-4292-b6ea-baf277d299f5&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
-		"classes": ["1 4", "2 1"]
+		"classes": ["1 4", "2 2"]
 	},
 	{
 		"subID": "พ30103",
@@ -39,13 +39,13 @@
 		"subID": "MA30103",
 		"name": "Foundation Mathematics 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3ae1fd53e0998a49efb3b8c3c5d1821fea%40thread.tacv2/live%2520%25E0%25B8%25A1.5_1?groupId=68dded9b-cf1f-41ab-82d9-648629ba42e0&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
-		"classes": ["2 2"]
+		"classes": ["2 1"]
 	},
 	{
 		"subID": "ว30247",
 		"name": "สรีรวิทยาสัตว์",
 		"msteam": "",
-		"classes": ["2 3", "2 4", "5 5"]
+		"classes": ["2 3 2", "5 5"]
 	},
 	{
 		"subID": "SO30103",
@@ -69,13 +69,13 @@
 		"subID": "ค30209",
 		"name": "คณิตศาสตร์ขั้นสูง 3",
 		"msteam": "",
-		"classes": ["3 1", "3 2", "4 4"]
+		"classes": ["3 1 2", "4 4"]
 	},
 	{
 		"subID": "ว30227",
 		"name": "เคมีขั้นสูง 2",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3al2kOauGzSVwSCwjIuoGedXImh_HHnkZgbWJzKQ0LOEw1%40thread.tacv2/General?groupId=12f335cc-d377-4f64-9206-cb330aac074e&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
-		"classes": ["3 3", "3 4", "4 5"]
+		"classes": ["3 3 2", "4 5"]
 	},
 	{
 		"subID": "ส30109",
