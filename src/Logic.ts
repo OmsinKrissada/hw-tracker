@@ -5,7 +5,7 @@ import moment from 'moment';
 import { confirm_type, sendEmbedPage } from './Helper';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
-import { prefix } from './Main';
+import { announce_channel, prefix } from './Main';
 import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
@@ -259,7 +259,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		refmsg.edit({
 			embed: {
 				title: 'Homework Creation Session',
-				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Due Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __วันส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
+				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Due Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __เวลาส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
 				color: CONFIG.color.pink
 			},
 			components: [{
@@ -325,7 +325,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 
 	// Insert to database
 	if (isCanceled) return;
-	HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, dueDate: dueDate, dueTime: dueTime, author: user.id }).then(() => {
+	HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, dueDate: dueDate, dueTime: dueTime, author: user.id }).then(async result => {
 		refmsg.edit({
 			embed: {
 				title: '<:checkmark:849685283459825714> Creation Successful',
@@ -334,6 +334,28 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 			},
 			components: []
 		})
+		const id = result.identifiers[0].id;
+		const hw = await HomeworkRepository.findOne(id);
+		if (hw.dueDate) {
+			hw.dueDate = new Date(hw.dueDate);
+			if (hw.dueTime) {
+				const [hours, mins, secs] = hw.dueTime.split(':');
+				hw.dueDate.setHours(+hours, +mins, +secs);
+			} else {
+				hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
+			}
+			schedule.scheduleJob(hw.dueDate, () => {
+				HomeworkRepository.softDelete(hw.id);
+				logger.debug(`Auto-deleted ${hw.id}`)
+				announce_channel.send({
+					embed: {
+						title: 'Auto-deleted due to hitting deadline.',
+						description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
+						color: CONFIG.color.yellow
+					}
+				})
+			})
+		}
 	})
 
 	/*

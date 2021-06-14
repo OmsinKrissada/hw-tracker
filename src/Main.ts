@@ -12,7 +12,7 @@ import { IsNull, Not } from 'typeorm';
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
 let announce_guild: Guild;
-let announce_channel: TextChannel;
+export let announce_channel: TextChannel;
 
 const periods_begin: { [key: string]: string } = {
 	'1': '8:30',
