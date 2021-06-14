@@ -16,7 +16,7 @@ async function getSubjectFromName(partialName: string, caller: User, channel: Te
 	for (const key in subjects) {
 		if (subjects[key].name.toLowerCase().includes(partialName.toLowerCase())) {
 			matched.push(subjects[key])
-			logger.debug(`Found subject match: ${subjects[key]}`)
+			logger.debug(`Found subject match: ${subjects[key].subID}`)
 		}
 	}
 
@@ -169,11 +169,12 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 		}))
 	else {
 		const hw = await HomeworkRepository.findOne({ id: id });
-		await HomeworkRepository.remove(hw);
+		await HomeworkRepository.softDelete(hw.id);
 		logger.debug(`deleted ${id}`)
+		const format = hw.dueTime ? 'lll' : 'll';
 		channel.send(new MessageEmbed({
 			title: '🗑️ Homework Deleted',
-			description: `__**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.detail ?? '*none*'}\n\n**Due**: ${hw.dueDate ? `${hw.dueDate}` : '*none*'}`,
+			description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 			color: CONFIG.color.green
 		}))
 	}

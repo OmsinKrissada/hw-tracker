@@ -15,6 +15,7 @@ interface ConfigOption {
 	guildId: string;
 	channelId: string;
 	prefix: string;
+	database: string;
 	color: {
 		red: number;
 		blue: number;

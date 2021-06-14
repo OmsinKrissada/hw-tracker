@@ -5,8 +5,9 @@ import moment from 'moment';
 import * as Tracker from './Logic';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
-import { connectDB } from './DBManager';
+import { connectDB, HomeworkRepository } from './DBManager';
 import { logger } from './Logger';
+import { IsNull, Not } from 'typeorm';
 
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
@@ -48,7 +49,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} น. - ${periods_end[+period + length - 1]} น.)\n\n${link}`,
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)),
 	})
-	console.log(`Announcing class ${subject.name} ${subject.subID}`)
+	logger.debug(`Announcing class ${subject.name} ${subject.subID}`)
 	announce_channel.send('<@&849534560668352542>', embed).then(msg => {
 		setTimeout(() => {
 			msg.delete()
@@ -56,18 +57,9 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 	})
 }
 
-async function announce_upcoming(subject: typeof subjects[0], period: string) {
+async function announce_upcoming(subject: typeof subjects[0]) {
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
-	// const embed = new MessageEmbed({
-	// 	author: { name: '🔺 Upcoming class' },
-	// 	title: `${subject.name}` + (subject.subID ? `(${subject.subID})` : ''),
-	// 	description: `คาบ ${period} กำลังจะเริ่ม! (${periods_begin[period]} น. - ${periods_end[period]} น.)\n\n${link}`,
-	// 	color: Math.floor(Math.random() * (16777215 - 0 + 1)) + 0,
-	// })
-	// channel.send('<@&849534560668352542>', embed).then(msg => {
-	// 	msg.delete({ timeout: 300000 })
-	// })
 	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`)
 	announce_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
 		setTimeout(() => {
@@ -288,12 +280,38 @@ bot.once('ready', async () => {
 				announce(subject, period, length);
 			});
 			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
-				announce_upcoming(subject, period);
+				announce_upcoming(subject);
 			});
 		})
 	})
-	logger.info('Class schedule registered.')
+	logger.info('Class schedule registered.');
 
+	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
+	hws.forEach(hw => {
+		hw.dueDate = new Date(hw.dueDate);
+		if (hw.dueTime) {
+			const [hours, mins, secs] = hw.dueTime.split(':');
+			hw.dueDate.setHours(+hours, +mins, +secs);
+		} else {
+			hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
+		}
+		logger.debug(`HW ${hw.id}: ${moment(hw.dueDate).fromNow()}`)
+		schedule.scheduleJob(hw.dueDate, () => {
+			HomeworkRepository.softDelete(hw.id);
+			logger.debug(`Auto-deleted ${hw.id}`)
+			announce_channel.send({
+				embed: {
+					title: 'Auto-deleted due to hitting deadline.',
+					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
+					color: CONFIG.color.yellow
+				}
+			})
+		})
+	});
+
+
+
+	(<TextChannel>bot.channels.cache.get('853997027984539668')).send('Ready.')
 })
 
 bot.login(CONFIG.token).then(() => {

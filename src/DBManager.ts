@@ -1,4 +1,5 @@
 import { Connection, createConnection, getConnection, Repository } from "typeorm";
+import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 import { Homework } from "./models/Homework";
 
@@ -14,7 +15,7 @@ export async function connectDB() {
 			"port": 3306,
 			"username": "hw_tracker",
 			"password": "fioeioewfioewadfefw2432432323f3wf",
-			"database": "hw_tracker",
+			"database": ConfigManager.database,
 			"synchronize": true,
 			"logging": false,
 			"charset": "utf8mb4",

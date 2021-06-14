@@ -9,6 +9,7 @@ export function inlineCodeBlock(content: string) {
 
 export async function sendEmbedPage(textChannel: TextChannel, prototype: MessageEmbed, name: string, value: string[], inline = false) {
 	let pages: MessageEmbed[] = [];
+	if (value.length == 0) value.push('*Empty*');
 	while (value.length > 0) {
 		let page = new MessageEmbed(prototype);
 		page.setTimestamp();

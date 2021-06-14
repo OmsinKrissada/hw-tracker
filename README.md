@@ -7,6 +7,7 @@ token: discord bot token here
 guildId: "guild id here"
 channelId: "channel id here"
 prefix: hw
+database: hw_tracker
 
 color:
     red: 0xff0000

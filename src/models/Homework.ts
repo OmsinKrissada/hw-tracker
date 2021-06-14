@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, DeleteDateColumn } from "typeorm";
 
 @Entity({ synchronize: true })
 export class Homework {
@@ -26,5 +26,8 @@ export class Homework {
 
 	@CreateDateColumn()
 	createdAt: Date;
+
+	@DeleteDateColumn()
+	deletedAt: Date;
 
 }
