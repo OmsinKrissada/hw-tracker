@@ -1,5 +1,6 @@
 import { TextChannel, MessageEmbed, MessageReaction, User, Message, MessageActionRowComponentResolvable, MessageComponent, MessageComponentInteraction } from "discord.js";
 import ConfigManager from "./ConfigManager";
+import { logger } from "./Logger";
 
 
 export function inlineCodeBlock(content: string) {
@@ -14,7 +15,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 		let val = '';
 
 		if (value[0].length > 1024) { // Catch when value tooooo long
-			console.error(`Cannot split value in page feature: length exceeds 1024 (${value[0].length})`);
+			logger.error(`Cannot split value in page feature: length exceeds 1024 (${value[0].length})`);
 			break;
 		}
 

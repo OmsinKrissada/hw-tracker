@@ -68,7 +68,7 @@ async function announce_upcoming(subject: typeof subjects[0], period: string) {
 	// channel.send('<@&849534560668352542>', embed).then(msg => {
 	// 	msg.delete({ timeout: 300000 })
 	// })
-	console.log(`Announcing upcoming class ${subject.name} ${subject.subID}`)
+	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`)
 	announce_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
 		setTimeout(() => {
 			msg.delete()
@@ -94,7 +94,7 @@ bot.on('interaction', async interaction => {
 			if (channel.messages.resolve(interaction.message.id).deletable) channel.messages.resolve(interaction.message.id).delete();
 			switch (interaction.customID) {
 				case 'hw_list':
-					console.log('listing')
+					logger.debug('listing from interaction')
 					Tracker.list(channel)
 					break;
 				case 'hw_add':
@@ -145,7 +145,7 @@ bot.on('interaction', async interaction => {
 						}]
 					})
 					m.awaitMessageComponentInteractions(i => i.customID == 'idk', { maxComponents: 1 }).then(collected => {
-						console.log('tryyyyinngggg')
+						logger.debug('tryyyyinngggg')
 						m.edit({ components: [] });
 					})
 					break;
@@ -156,7 +156,7 @@ bot.on('interaction', async interaction => {
 					break;
 			}
 		}
-		console.log(interaction.customID)
+		logger.debug(interaction.customID)
 		// interaction.deferUpdate(); // remove cuz it'll already be deleted
 	}
 })
