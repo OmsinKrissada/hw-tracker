@@ -5,6 +5,8 @@ import moment from 'moment';
 import * as Tracker from './Logic';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
+import { connectDB } from './DBManager';
+import { logger } from './Logger';
 
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
@@ -275,9 +277,8 @@ async function initilize() {
 
 bot.once('ready', async () => {
 	await initilize();
-
-
-	console.log('Registering class schedule ...')
+	await connectDB();
+	logger.info('Registering class schedule ...')
 	subjects.forEach(subject => {
 		subject.classes.forEach(c => {
 			const [DoW, period, l] = c.split(' ');
@@ -291,10 +292,10 @@ bot.once('ready', async () => {
 			});
 		})
 	})
-	console.log('Class schedule registered.')
+	logger.info('Class schedule registered.')
 
 })
 
 bot.login(CONFIG.token).then(() => {
-	console.log(`Logged in as >> ${bot.user.tag} (${bot.user.id})`)
+	logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`)
 })

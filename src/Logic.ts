@@ -8,6 +8,7 @@ import subjects from './subjects.json';
 import { prefix } from './Main';
 import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
+import { logger } from './Logger';
 
 async function getSubjectFromName(partialName: string, caller: User, channel: TextChannel) {
 	let matched: typeof subjects = [];
@@ -15,7 +16,7 @@ async function getSubjectFromName(partialName: string, caller: User, channel: Te
 	for (const key in subjects) {
 		if (subjects[key].name.toLowerCase().includes(partialName.toLowerCase())) {
 			matched.push(subjects[key])
-			console.log('found match')
+			logger.debug(`Found subject match: ${subjects[key]}`)
 		}
 	}
 
@@ -34,7 +35,6 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 		.addOrderBy('-dueDate', 'DESC')
 		.addOrderBy('-dueTime', 'DESC')
 		.getRawMany();
-	// console.log(hws)
 	let i = 0;
 	sendEmbedPage(<TextChannel>channel, new MessageEmbed({ color: CONFIG.color.blue }), 'Homework List',
 		hws
@@ -97,7 +97,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		let subject_name = m.content;
 
 		sub = (await getSubjectFromName(subject_name, user, <TextChannel>channel));
-		console.log('subid: ', sub?.subID)
+		logger.debug(`SubID in creation session: ${sub?.subID}`)
 		while (!sub) {
 			refmsg.edit(new MessageEmbed({
 				title: 'Homework Creation Session',
@@ -170,7 +170,7 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 	else {
 		const hw = await HomeworkRepository.findOne({ id: id });
 		await HomeworkRepository.remove(hw);
-		console.log(`deleted ${id}`)
+		logger.debug(`deleted ${id}`)
 		channel.send(new MessageEmbed({
 			title: '🗑️ Homework Deleted',
 			description: `__**${hw.name}**__\n\n📋 **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}\n\n**Description**:\n${hw.detail ?? '*none*'}\n\n**Due**: ${hw.dueDate ? `${hw.dueDate}` : '*none*'}`,
