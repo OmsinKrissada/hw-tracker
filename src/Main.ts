@@ -93,27 +93,56 @@ bot.on('interaction', async interaction => {
 					Tracker.add(user, channel)
 					break;
 				case 'hw_remove':
-					await channel.send({
-						embed: { title: 'Please enter homework ID to delete.' }
+					const prompt_promise = channel.send({
+						embed: { title: 'Please enter homework ID to delete.', description: '(สามารถดู ID ได้จากคำสั่ง list)' },
+						components: [{
+							type: 1,
+							components: [{
+								type: 2,
+								label: 'Cancel',
+								style: 4,
+								customID: 'cancel_remove'
+							}]
+						}]
 					});
-					const content = (await channel.awaitMessages(m => m.author.id == user.id, { maxProcessed: 1 })).first()?.content;
-					if (content) {
-						if (isNaN(+content))
-							channel.send(new MessageEmbed({
-								title: 'Invalid',
-								description: `Invalid homework ID: \`${content}\``,
-								color: CONFIG.color.red
-							}))
-						else {
-							Tracker.remove(user, channel, +content)
+					let received = false;
+					const reply_promise = channel.awaitMessages(m => m.author.id == user.id, { max: 1 }).then(async collected => {
+						if (received) return;
+						received = true;
+						const content = collected.first()?.content;
+						if (content) {
+							if (isNaN(+content))
+								channel.send({
+									embed: {
+										title: 'Invalid',
+										description: `Invalid homework ID: \`${content}\``,
+										color: CONFIG.color.red
+									}
+								})
+							else {
+								Tracker.remove(user, channel, +content)
+							}
+						} else {
+							channel.send({
+								embed: {
+									title: 'Please provide homework ID',
+									description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
+									color: CONFIG.color.red
+								}
+							})
 						}
-					} else {
-						channel.send(new MessageEmbed({
-							title: 'Please provide homework ID',
-							description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
-							color: CONFIG.color.red
-						}))
-					}
+						if ((await prompt_promise)?.deletable) (await prompt_promise).delete();
+					});
+					const cancel_promise = (await prompt_promise).awaitMessageComponentInteractions(i => i.user.id == user.id, { maxComponents: 1 }).then(async collected => {
+						if (received) return;
+						received = true;
+						const interaction = collected.first();
+						interaction.reply('You\'ve canceled homework deletion.')
+						if ((await prompt_promise)?.deletable) (await prompt_promise).delete();
+					});
+
+					await Promise.race([reply_promise, cancel_promise]);
+
 					break;
 
 			}
@@ -165,31 +194,6 @@ bot.on('message', async msg => {
 
 
 	switch (command.toLowerCase()) {
-		case `${prefix}list`:
-			Tracker.list(channel)
-			break;
-		case `${prefix}add`:
-			Tracker.add(user, channel)
-			break;
-		case `${prefix}remove`:
-			if (args[0]) {
-				if (isNaN(+args[0]))
-					channel.send(new MessageEmbed({
-						title: 'Invalid',
-						description: `Invalid homework ID: \`${args[0]}\``,
-						color: CONFIG.color.red
-					}))
-				else {
-					Tracker.remove(user, channel, +args[0])
-				}
-			} else {
-				channel.send(new MessageEmbed({
-					title: 'Please provide homework ID',
-					description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
-					color: CONFIG.color.red
-				}))
-			}
-			break;
 		case `${prefix}`: {
 			channel.send({
 				embed: {
@@ -220,6 +224,31 @@ bot.on('message', async msg => {
 			})
 			break;
 		}
+		case `${prefix}list`:
+			Tracker.list(channel)
+			break;
+		case `${prefix}add`:
+			Tracker.add(user, channel)
+			break;
+		case `${prefix}remove`:
+			if (args[0]) {
+				if (isNaN(+args[0]))
+					channel.send(new MessageEmbed({
+						title: 'Invalid',
+						description: `Invalid homework ID: \`${args[0]}\``,
+						color: CONFIG.color.red
+					}))
+				else {
+					Tracker.remove(user, channel, +args[0])
+				}
+			} else {
+				channel.send(new MessageEmbed({
+					title: 'Please provide homework ID',
+					description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
+					color: CONFIG.color.red
+				}))
+			}
+			break;
 		case `my${prefix}`: {
 			channel.send('Homework Menu (THIS DOESN\'T WORK YET!!!) >>', {
 				// embed: {
@@ -261,15 +290,12 @@ bot.on('message', async msg => {
 
 
 
-async function initilize() {
 
-	announce_guild = await bot.guilds.fetch(<any>CONFIG.guildId);
-	announce_channel = announce_guild.channels.resolve(<any>CONFIG.channelId) as TextChannel;
-}
 
 bot.once('ready', async () => {
-	await initilize();
-	await connectDB();
+	announce_guild = await bot.guilds.fetch(CONFIG.guildId);
+	announce_channel = announce_guild.channels.resolve(CONFIG.channelId) as TextChannel;
+
 	logger.info('Registering class schedule ...')
 	subjects.forEach(subject => {
 		subject.classes.forEach(c => {
@@ -311,9 +337,11 @@ bot.once('ready', async () => {
 
 
 
-	(<TextChannel>bot.channels.cache.get('853997027984539668')).send('Ready.')
+	// (<TextChannel>bot.channels.cache.get('853997027984539668')).send('Ready.')
 })
 
-bot.login(CONFIG.token).then(() => {
-	logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`)
+connectDB().then(() => {
+	bot.login(CONFIG.token).then(() => {
+		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`)
+	})
 })

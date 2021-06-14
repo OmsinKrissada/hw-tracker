@@ -12,16 +12,23 @@ import YamlValidator from 'yaml-validator';
 
 interface ConfigOption {
 	token: string;
-	guildId: string;
-	channelId: string;
+	guildId: `${bigint}`;
+	channelId: `${bigint}`;
 	prefix: string;
-	database: string;
+	mysql: {
+		dbname: string;
+		hostname: string;
+		port: number;
+		username: string;
+		password: string;
+	}
 	color: {
 		red: number;
 		blue: number;
 		green: number;
 		yellow: number;
 		aqua: number;
+		pink: number;
 	}
 }
 

@@ -11,11 +11,11 @@ export async function connectDB() {
 	try {
 		DBConnection = await createConnection({
 			"type": "mysql",
-			"host": "omsinkrissada.sytes.net",
-			"port": 3306,
-			"username": "hw_tracker",
-			"password": "fioeioewfioewadfefw2432432323f3wf",
-			"database": ConfigManager.database,
+			"host": ConfigManager.mysql.hostname,
+			"port": ConfigManager.mysql.port,
+			"username": ConfigManager.mysql.username,
+			"password": ConfigManager.mysql.password,
+			"database": ConfigManager.mysql.dbname,
 			"synchronize": true,
 			"logging": false,
 			"charset": "utf8mb4",
