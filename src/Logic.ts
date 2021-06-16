@@ -296,7 +296,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 				if (received_time || isCanceled) return;
 				refmsg.edit(new MessageEmbed({
 					title: 'Homework Creation Session',
-					description: `รูปแบบวันไม่ถูกต้อง กรุณาใส่วันในรูปแบบ hh:mm เช่น \`18:00\``,
+					description: `รูปแบบเวลาไม่ถูกต้อง กรุณาใส่วันในรูปแบบ hh:mm เช่น \`18:00\``,
 					color: CONFIG.color.yellow
 				}))
 				await channel.awaitMessages(m => m.author.id == user.id, { max: 1, time: 300000 }).then(innerCollected => {
@@ -329,7 +329,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		refmsg.edit({
 			embed: {
 				title: '<:checkmark:849685283459825714> Creation Successful',
-				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('ll')}\n` : ''}${dueTime ? `**Date**: ${dueTime}` : ''}`,
+				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('ll')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
 				color: CONFIG.color.green
 			},
 			components: []

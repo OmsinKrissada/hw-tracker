@@ -34,7 +34,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 	})
 
 
-	let current_page = 0;
+	let current_page = 1;
 	const page_components: MessageActionRowComponentResolvable[] = [];
 
 	if (pages.length > 1) {
@@ -80,55 +80,63 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 	});
 
 	const collector = message.createMessageComponentInteractionCollector(interaction => interaction.customID.startsWith('page'))//, { idle: 900000 }
-	collector.on('collect', interaction => {
+	collector.on('collect', async interaction => {
 		const customID = interaction.customID;
 		const user = interaction.user;
 		if (customID === 'page_previous') {
-			if (current_page + 1 > 1) {
-				message.edit(pages[--current_page]);
-			}
+			if (current_page > 1) current_page--;
 		}
 		else if (customID === 'page_next') {
-			if (current_page + 1 < pages.length) {
-				message.edit(pages[++current_page]);
-			}
+			if (current_page < pages.length) current_page++;
 		}
 		else if (customID === 'page_first') {
-			if (current_page + 1 > 1) {
-				message.edit(pages[0]);
-				current_page = 0;
-			}
+			if (current_page > 1) current_page = 1;
 		}
 		else if (customID === 'page_last') {
-			if (current_page + 1 < pages.length) {
-				message.edit(pages[pages.length - 1]);
-				current_page = pages.length - 1;
-			}
+			if (current_page < pages.length) current_page = pages.length;
 		}
 		else if (customID === 'page_choose') {
-			message.channel.send(new MessageEmbed({ author: { name: 'Type page number in chat >>>', iconURL: user.displayAvatarURL() } })).then(ask4pagemsg => {
-				message.channel.awaitMessages((responsemsg: Message) => responsemsg.author.id == user.id, { max: 1, time: 60000 }).then(msg => {
-					const text = msg.first().content;
-					if (!isNaN(+text) && +text >= 1 && +text <= pages.length) {
-						message.edit(pages[+text - 1])
-						current_page = +text - 1;
-					} else {
-						msg.first().reply('Unknown page').then(unknownmsg => {
-							setTimeout(() => {
-								unknownmsg.delete()
-							}, 5000);
-						});
-					}
-					(<TextChannel>message.channel).bulkDelete([ask4pagemsg, msg.first()])
-				}).catch(() => {
-					if (!ask4pagemsg.deleted) ask4pagemsg.delete();
-				});
+			await interaction.reply(new MessageEmbed({ author: { name: 'Type page number in chat >>>', iconURL: user.displayAvatarURL() } }));
+			await message.channel.awaitMessages((responsemsg: Message) => responsemsg.author.id == user.id, { max: 1, time: 60000 }).then(msg => {
+				const text = msg.first().content;
+				if (!isNaN(+text) && +text >= 1 && +text <= pages.length) {
+					current_page = +text;
+				} else {
+					msg.first().reply('Unknown page').then(unknownmsg => {
+						setTimeout(() => {
+							unknownmsg.delete()
+						}, 5000);
+					});
+				}
+				message.channel.messages.delete(msg.first());
+				interaction.deleteReply();
+			}).catch(() => {
+				interaction.deleteReply();
 			});
 		}
-		// else {
-		// 	message.reactions.resolve(<any>reaction.emoji.name).users.remove(user);
-		// }
-		interaction.deferUpdate();
+
+		const previous_index = page_components.findIndex(c => c.customID == 'page_previous');
+		const first_index = page_components.findIndex(c => c.customID == 'page_first');
+		const next_index = page_components.findIndex(c => c.customID == 'page_next');
+		const last_index = page_components.findIndex(c => c.customID == 'page_last');
+		if (current_page == 1) {
+			if (previous_index != -1) page_components[previous_index].disabled = true;
+			if (first_index != -1) page_components[first_index].disabled = true;
+			if (next_index != -1) page_components[next_index].disabled = false;
+			if (last_index != -1) page_components[last_index].disabled = false;
+		} else if (current_page == pages.length) {
+			if (previous_index != -1) page_components[previous_index].disabled = false;
+			if (first_index != -1) page_components[first_index].disabled = false;
+			if (next_index != -1) page_components[next_index].disabled = true;
+			if (last_index != -1) page_components[last_index].disabled = true;
+		} else {
+			if (previous_index != -1) page_components[previous_index].disabled = false;
+			if (first_index != -1) page_components[first_index].disabled = false;
+			if (next_index != -1) page_components[next_index].disabled = false;
+			if (last_index != -1) page_components[last_index].disabled = false;
+		}
+		message.edit({ embed: pages[current_page - 1], components: [{ type: 1, components: page_components }] })
+		if (!interaction?.deferred && !interaction?.replied) interaction.deferUpdate();
 	})
 	collector.on('end', () => {
 		message.components

@@ -313,6 +313,7 @@ bot.once('ready', async () => {
 	logger.info('Class schedule registered.');
 
 	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
+	logger.info('Registering auto-delete tasks...')
 	hws.forEach(hw => {
 		hw.dueDate = new Date(hw.dueDate);
 		if (hw.dueTime) {
@@ -321,7 +322,7 @@ bot.once('ready', async () => {
 		} else {
 			hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 		}
-		logger.debug(`HW ${hw.id}: ${moment(hw.dueDate).fromNow()}`)
+		// logger.debug(`HW ${hw.id}: ${moment(hw.dueDate).fromNow()}`)
 		schedule.scheduleJob(hw.dueDate, () => {
 			HomeworkRepository.softDelete(hw.id);
 			logger.debug(`Auto-deleted ${hw.id}`)
@@ -334,6 +335,7 @@ bot.once('ready', async () => {
 			})
 		})
 	});
+	logger.info('Auto-delete tasks registered.');
 
 
 
