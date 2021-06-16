@@ -383,6 +383,11 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 		const hw = await HomeworkRepository.findOne({ id: id });
 		await HomeworkRepository.softDelete(hw.id);
 		logger.debug(`deleted ${id}`)
+		if (hw.dueTime) {
+			const [hours, mins, secs] = hw.dueTime.split(':');
+			hw.dueDate = new Date(hw.dueDate);
+			hw.dueDate.setHours(+hours, +mins, +secs);
+		}
 		const format = hw.dueTime ? 'lll' : 'll';
 		channel.send(new MessageEmbed({
 			title: '🗑️ Homework Deleted',

@@ -230,7 +230,7 @@ bot.on('message', async msg => {
 		case `${prefix}add`:
 			Tracker.add(user, channel)
 			break;
-		case `${prefix}remove`:
+		case `${prefix}rm`:
 			if (args[0]) {
 				if (isNaN(+args[0]))
 					channel.send(new MessageEmbed({
