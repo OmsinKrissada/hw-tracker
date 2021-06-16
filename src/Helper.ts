@@ -42,13 +42,15 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 			type: 2,
 			style: 2,
 			label: '◀ First',
-			customID: 'page_first'
+			customID: 'page_first',
+			disabled: true
 		})
 		page_components.push({
 			type: 2,
 			style: 2,
 			label: '◀',
-			customID: 'page_previous'
+			customID: 'page_previous',
+			disabled: true
 		})
 		page_components.push({
 			type: 2,
