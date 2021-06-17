@@ -15,6 +15,8 @@ interface ConfigOption {
 	guildId: `${bigint}`;
 	channelId: `${bigint}`;
 	prefix: string;
+	subscriber_role: `${bigint}`;
+	source_link: string;
 	mysql: {
 		dbname: string;
 		hostname: string;

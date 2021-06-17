@@ -10,14 +10,15 @@ export function inlineCodeBlock(content: string) {
 export async function sendEmbedPage(textChannel: TextChannel, prototype: MessageEmbed, name: string, value: string[], inline = false) {
 	let pages: MessageEmbed[] = [];
 	if (value.length == 0) value.push('*Empty*');
+
+	let pagenum = 1;
 	while (value.length > 0) {
 		let page = new MessageEmbed(prototype);
-		page.setTimestamp();
 		let val = '';
 
 		if (value[0].length > 1024) { // Catch when value tooooo long
 			logger.error(`Cannot split value in page feature: length exceeds 1024 (${value[0].length})`);
-			break;
+			throw (`Cannot split value in page feature: length exceeds 1024 (${value[0].length})`);
 		}
 
 		for (let i = 0; value.length > 0 && val.length + value[0].length <= 1024; i++) {
@@ -25,14 +26,13 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 		}
 
 		if (val.length > 0) page.addFields({ name: name, value: val });
+		page.setTimestamp();
+
 		pages.push(page);
 	}
-
-	let pagenum = 1;
 	pages.forEach(page => {
 		page.setFooter(page.footer ? page.footer.text + `\nPage ${pagenum++} / ${pages.length}` : `Page ${pagenum++} / ${pages.length} `);
 	});
-
 
 	let current_page = 1;
 	const page_components: MessageActionRowComponentResolvable[] = [];

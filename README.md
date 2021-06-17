@@ -6,6 +6,8 @@ Create a file name `config.yml` in the same directory as `package.json` using th
 token: discord bot token here
 guildId: "guild id here"
 channelId: "channel id here"
+subscriber_role: "role id here"
+source_link: https://github.com/OmsinKrissada/hw-tracker
 prefix: hw
 mysql:
     database: hw_tracker

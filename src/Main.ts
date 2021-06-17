@@ -50,7 +50,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)),
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
-	announce_channel.send('<@&849534560668352542>', embed).then(msg => {
+	announce_channel.send(`<@&${CONFIG.subscriber_role}>`, embed).then(msg => {
 		setTimeout(() => {
 			msg.delete();
 		}, 3600000 * length);
@@ -197,7 +197,8 @@ bot.on('message', async msg => {
 		case `${prefix}`: {
 			channel.send({
 				embed: {
-					description: '**Homework Menus**',
+					title: 'Homework Menu',
+					description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
 					color: CONFIG.color.blue,
 				},
 				components: [{
@@ -210,13 +211,13 @@ bot.on('message', async msg => {
 					},
 					{
 						type: 2,
-						label: 'Add homework',
+						label: '➕ Add',
 						style: 2,
 						customID: 'hw_add'
 					},
 					{
 						type: 2,
-						label: 'Remove homework',
+						label: '➖ Remove',
 						style: 2,
 						customID: 'hw_remove'
 					}]
