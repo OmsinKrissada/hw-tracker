@@ -7,7 +7,7 @@ export class Homework {
 	id: number;
 
 	@Column({ type: "varchar", length: 7 })
-	subID: string
+	subID: string;
 
 	@Column()
 	name: string;

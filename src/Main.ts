@@ -14,7 +14,7 @@ const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_RE
 let announce_guild: Guild;
 export let announce_channel: TextChannel;
 
-const periods_begin: { [key: string]: string } = {
+const periods_begin: { [key: string]: string; } = {
 	'1': '8:30',
 	'2': '9:20',
 	'3': '10:20',
@@ -22,9 +22,9 @@ const periods_begin: { [key: string]: string } = {
 	'5': '13:00',
 	'6': '14:00',
 	'7': '14:50'
-}
+};
 
-const periods_end: { [key: string]: string } = {
+const periods_end: { [key: string]: string; } = {
 	'1': '9:20',
 	'2': '10:10',
 	'3': '11:10',
@@ -32,7 +32,7 @@ const periods_end: { [key: string]: string } = {
 	'5': '13:50',
 	'6': '14:50',
 	'7': '15:40'
-}
+};
 
 moment.locale('th');
 
@@ -48,24 +48,24 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 		title: `${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
 		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} น. - ${periods_end[+period + length - 1]} น.)\n\n${link}`,
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)),
-	})
-	logger.debug(`Announcing class ${subject.name} ${subject.subID}`)
+	});
+	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	announce_channel.send('<@&849534560668352542>', embed).then(msg => {
 		setTimeout(() => {
-			msg.delete()
+			msg.delete();
 		}, 3600000 * length);
-	})
+	});
 }
 
 async function announce_upcoming(subject: typeof subjects[0]) {
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
-	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`)
+	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`);
 	announce_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
 		setTimeout(() => {
-			msg.delete()
+			msg.delete();
 		}, 300000);
-	})
+	});
 }
 
 
@@ -86,11 +86,11 @@ bot.on('interaction', async interaction => {
 			if (channel.messages.resolve(interaction.message.id).deletable) channel.messages.resolve(interaction.message.id).delete();
 			switch (interaction.customID) {
 				case 'hw_list':
-					logger.debug('listing from interaction')
-					Tracker.list(channel)
+					logger.debug('listing from interaction');
+					Tracker.list(channel);
 					break;
 				case 'hw_add':
-					Tracker.add(user, channel)
+					Tracker.add(user, channel);
 					break;
 				case 'hw_remove':
 					const prompt_promise = channel.send({
@@ -118,9 +118,9 @@ bot.on('interaction', async interaction => {
 										description: `Invalid homework ID: \`${content}\``,
 										color: CONFIG.color.red
 									}
-								})
+								});
 							else {
-								Tracker.remove(user, channel, +content)
+								Tracker.remove(user, channel, +content);
 							}
 						} else {
 							channel.send({
@@ -129,7 +129,7 @@ bot.on('interaction', async interaction => {
 									description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
 									color: CONFIG.color.red
 								}
-							})
+							});
 						}
 						if ((await prompt_promise)?.deletable) (await prompt_promise).delete();
 					});
@@ -137,7 +137,7 @@ bot.on('interaction', async interaction => {
 						if (received) return;
 						received = true;
 						const interaction = collected.first();
-						interaction.reply('You\'ve canceled homework deletion.')
+						interaction.reply('You\'ve canceled homework deletion.');
 						if ((await prompt_promise)?.deletable) (await prompt_promise).delete();
 					});
 
@@ -164,23 +164,23 @@ bot.on('interaction', async interaction => {
 								customID: 'idk'
 							}]
 						}]
-					})
+					});
 					m.awaitMessageComponentInteractions(i => i.customID == 'idk', { maxComponents: 1 }).then(collected => {
-						logger.debug('tryyyyinngggg')
+						logger.debug('tryyyyinngggg');
 						m.edit({ components: [] });
-					})
+					});
 					break;
 				case 'myhw_checka':
-					Tracker.add(user, channel)
+					Tracker.add(user, channel);
 					break;
 				case 'myhw_a':
 					break;
 			}
 		}
-		logger.debug(interaction.customID)
+		logger.debug(interaction.customID);
 		// interaction.deferUpdate(); // remove cuz it'll already be deleted
 	}
-})
+});
 
 
 
@@ -221,14 +221,14 @@ bot.on('message', async msg => {
 						customID: 'hw_remove'
 					}]
 				}]
-			})
+			});
 			break;
 		}
 		case `${prefix}list`:
-			Tracker.list(channel)
+			Tracker.list(channel);
 			break;
 		case `${prefix}add`:
-			Tracker.add(user, channel)
+			Tracker.add(user, channel);
 			break;
 		case `${prefix}rm`:
 			if (args[0]) {
@@ -237,16 +237,16 @@ bot.on('message', async msg => {
 						title: 'Invalid',
 						description: `Invalid homework ID: \`${args[0]}\``,
 						color: CONFIG.color.red
-					}))
+					}));
 				else {
-					Tracker.remove(user, channel, +args[0])
+					Tracker.remove(user, channel, +args[0]);
 				}
 			} else {
 				channel.send(new MessageEmbed({
 					title: 'Please provide homework ID',
 					description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
 					color: CONFIG.color.red
-				}))
+				}));
 			}
 			break;
 		case `my${prefix}`: {
@@ -279,12 +279,12 @@ bot.on('message', async msg => {
 						customID: 'myhw_remove'
 					}]
 				}]
-			})
+			});
 			break;
 		}
 	}
 
-})
+});
 
 
 
@@ -296,7 +296,7 @@ bot.once('ready', async () => {
 	announce_guild = await bot.guilds.fetch(CONFIG.guildId);
 	announce_channel = announce_guild.channels.resolve(CONFIG.channelId) as TextChannel;
 
-	logger.info('Registering class schedule ...')
+	logger.info('Registering class schedule ...');
 	subjects.forEach(subject => {
 		subject.classes.forEach(c => {
 			const [DoW, period, l] = c.split(' ');
@@ -308,12 +308,12 @@ bot.once('ready', async () => {
 			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
 				announce_upcoming(subject);
 			});
-		})
-	})
+		});
+	});
 	logger.info('Class schedule registered.');
 
 	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
-	logger.info('Registering auto-delete tasks...')
+	logger.info('Registering auto-delete tasks...');
 	hws.forEach(hw => {
 		hw.dueDate = new Date(hw.dueDate);
 		if (hw.dueTime) {
@@ -325,25 +325,25 @@ bot.once('ready', async () => {
 		// logger.debug(`HW ${hw.id}: ${moment(hw.dueDate).fromNow()}`)
 		schedule.scheduleJob(hw.dueDate, () => {
 			HomeworkRepository.softDelete(hw.id);
-			logger.debug(`Auto-deleted ${hw.id}`)
+			logger.debug(`Auto-deleted ${hw.id}`);
 			announce_channel.send({
 				embed: {
 					title: 'Auto-deleted due to hitting deadline.',
 					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 					color: CONFIG.color.yellow
 				}
-			})
-		})
+			});
+		});
 	});
 	logger.info('Auto-delete tasks registered.');
 
 
 
 	// (<TextChannel>bot.channels.cache.get('853997027984539668')).send('Ready.')
-})
+});
 
 connectDB().then(() => {
 	bot.login(CONFIG.token).then(() => {
-		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`)
-	})
-})
+		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`);
+	});
+});

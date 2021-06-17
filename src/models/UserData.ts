@@ -8,7 +8,7 @@ export class UserData {
 
 	// @ManyToOne()
 	@Column()
-	homework_id: number
+	homework_id: number;
 
 
 

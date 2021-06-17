@@ -31,7 +31,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 	let pagenum = 1;
 	pages.forEach(page => {
 		page.setFooter(page.footer ? page.footer.text + `\nPage ${pagenum++} / ${pages.length}` : `Page ${pagenum++} / ${pages.length} `);
-	})
+	});
 
 
 	let current_page = 1;
@@ -44,33 +44,33 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 			label: '◀ First',
 			customID: 'page_first',
 			disabled: true
-		})
+		});
 		page_components.push({
 			type: 2,
 			style: 2,
 			label: '◀',
 			customID: 'page_previous',
 			disabled: true
-		})
+		});
 		page_components.push({
 			type: 2,
 			style: 2,
 			label: '▶',
 			// emoji: { name: 'join_arrow', id: '845520716715917314' },
 			customID: 'page_next'
-		})
+		});
 		if (pages.length > 2) page_components.push({
 			type: 2,
 			style: 2,
 			label: 'Last ▶',
 			customID: 'page_last'
-		})
+		});
 		if (pages.length > 4) page_components.push({
 			type: 2,
 			style: 2,
 			label: '📝 Custom page',
 			customID: 'page_choose'
-		})
+		});
 	}
 
 	const message = await textChannel.send({
@@ -81,7 +81,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 		}] : []
 	});
 
-	const collector = message.createMessageComponentInteractionCollector(interaction => interaction.customID.startsWith('page'))//, { idle: 900000 }
+	const collector = message.createMessageComponentInteractionCollector(interaction => interaction.customID.startsWith('page'));//, { idle: 900000 }
 	collector.on('collect', async interaction => {
 		const customID = interaction.customID;
 		const user = interaction.user;
@@ -106,7 +106,7 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 				} else {
 					msg.first().reply('Unknown page').then(unknownmsg => {
 						setTimeout(() => {
-							unknownmsg.delete()
+							unknownmsg.delete();
 						}, 5000);
 					});
 				}
@@ -137,12 +137,12 @@ export async function sendEmbedPage(textChannel: TextChannel, prototype: Message
 			if (next_index != -1) page_components[next_index].disabled = false;
 			if (last_index != -1) page_components[last_index].disabled = false;
 		}
-		message.edit({ embed: pages[current_page - 1], components: [{ type: 1, components: page_components }] })
+		message.edit({ embed: pages[current_page - 1], components: [{ type: 1, components: page_components }] });
 		if (!interaction?.deferred && !interaction?.replied) interaction.deferUpdate();
-	})
+	});
 	collector.on('end', () => {
-		message.components
-	})
+		message.components;
+	});
 	return message;
 }
 
@@ -163,8 +163,8 @@ export async function confirm_type<T extends Object>(title: string, list: T[], c
 			items.push(`\`${i}\` - ${item}`);
 		}
 		i++;
-	})
-	const confirm_msg = await sendEmbedPage(<TextChannel>channel, embed, '​', items)
+	});
+	const confirm_msg = await sendEmbedPage(<TextChannel>channel, embed, '​', items);
 	const collected = await channel.awaitMessages(response => response.author.id == caller.id, { max: 1 });
 
 	const answer_msg = collected.first()!;

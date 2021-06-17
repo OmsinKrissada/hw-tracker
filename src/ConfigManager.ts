@@ -21,7 +21,7 @@ interface ConfigOption {
 		port: number;
 		username: string;
 		password: string;
-	}
+	};
 	color: {
 		red: number;
 		blue: number;
@@ -29,7 +29,7 @@ interface ConfigOption {
 		yellow: number;
 		aqua: number;
 		pink: number;
-	}
+	};
 }
 
 // const validator = new YamlValidator({
