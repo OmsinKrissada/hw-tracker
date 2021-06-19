@@ -17,12 +17,16 @@ interface ConfigOption {
 	prefix: string;
 	subscriber_role: `${bigint}`;
 	source_link: string;
+	database: 'mysql' | 'sqlite';
 	mysql: {
 		dbname: string;
 		hostname: string;
 		port: number;
 		username: string;
 		password: string;
+	};
+	sqlite: {
+		dbpath: string;
 	};
 	color: {
 		red: number;
