@@ -50,7 +50,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)),
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
-	announce_channel.send(`<@&${CONFIG.subscriber_role}>`, embed).then(msg => {
+	announce_channel.send(`<@&${CONFIG.subscriber_role}>`, { embed: embed }).then(msg => {
 		setTimeout(() => {
 			msg.delete();
 		}, 3600000 * length);

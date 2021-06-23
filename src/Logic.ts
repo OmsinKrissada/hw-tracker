@@ -42,6 +42,7 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 				i++;
 				let format;
 				let dueTimestamp: Date;
+				hw.dueDate = new Date(hw.dueDate);
 				if (hw.dueTime) {
 					const [hours, mins, secs] = hw.dueTime.split(':');
 					hw.dueDate.setHours(+hours, +mins, +secs);
@@ -63,9 +64,9 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 						sameElse: 'DD/MM/YYYY'
 					};
 				}
+				console.log(hw);
 
-
-				return `-------------------------------------------\n<:clipboard_twemoji:854925496197054504> ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
+				return `-------------------------------------------\n<:clipboard_twemoji:854925496197054504> ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
 			})
 	);
 };

@@ -12,7 +12,7 @@
 	"author": "",
 	"license": "MIT",
 	"dependencies": {
-		"discord.js": "github:discordjs/discord.js",
+		"discord.js": "github:discordjs/discord.js#7b85a7259f563ab14ae6c0a665a3dd43c486fde4",
 		"js-yaml": "^3.14.1",
 		"moment": "^2.29.1",
 		"mysql": "^2.18.1",

@@ -9,12 +9,19 @@ channelId: "channel id here"
 subscriber_role: "role id here"
 source_link: https://github.com/OmsinKrissada/hw-tracker
 prefix: hw
+
+database: sqlite
+
 mysql:
     database: hw_tracker
     hostname: example.com
     port: 3306
     username: hw_tracker
     password: thisisaverystrongpassword
+
+sqlite:
+    dbpath: hw_tracker.db
+
 color:
     red: 0xff0000
     green: 0x04CF8D
