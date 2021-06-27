@@ -25,6 +25,13 @@ interface ConfigOption {
 		username: string;
 		password: string;
 	};
+	postgres: {
+		dbname: string;
+		hostname: string;
+		port: number;
+		username: string;
+		password: string;
+	};
 	sqlite: {
 		dbpath: string;
 	};

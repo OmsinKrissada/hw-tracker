@@ -6,7 +6,7 @@ export class Homework {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column({ type: "varchar", length: 7 })
+	@Column({ length: 7 })
 	subID: string;
 
 	@Column()
@@ -15,13 +15,13 @@ export class Homework {
 	@Column({ nullable: true })
 	detail: string;
 
-	@Column({ type: 'date', nullable: true })
+	@Column({ nullable: true })
 	dueDate: Date;
 
-	@Column({ type: 'time', nullable: true })
+	@Column({ nullable: true })
 	dueTime: string;
 
-	@Column({ type: "varchar", length: 18 })
+	@Column({ length: 18 })
 	author: string; // Discord user id
 
 	@CreateDateColumn()
