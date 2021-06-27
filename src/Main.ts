@@ -319,8 +319,8 @@ bot.once('ready', async () => {
 	hws.forEach(hw => {
 		hw.dueDate = new Date(hw.dueDate);
 		if (hw.dueTime) {
-			const [hours, mins, secs] = hw.dueTime.split(':');
-			hw.dueDate.setHours(+hours, +mins, +secs);
+			const [hours, mins] = hw.dueTime.split(':');
+			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
 		} else {
 			hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 		}
