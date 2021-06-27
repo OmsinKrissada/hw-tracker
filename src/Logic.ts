@@ -1,6 +1,6 @@
 import { Client, DMChannel, Guild, Interaction, MessageComponentInteraction, MessageEmbed, MessageReaction, NewsChannel, TextChannel, User } from 'discord.js';
 import schedule from 'node-schedule';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import { confirm_type, sendEmbedPage } from './Helper';
 import CONFIG from './ConfigManager';
@@ -41,11 +41,11 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 			.map(hw => {
 				i++;
 				let format;
-				let dueTimestamp: Date;
 				hw.dueDate = new Date(hw.dueDate);
+				hw.createdAt = new Date(hw.createdAt);
 				if (hw.dueTime) {
-					const [hours, mins, secs] = hw.dueTime.split(':');
-					hw.dueDate.setHours(+hours, +mins, +secs);
+					const [hours, mins] = hw.dueTime.split(':');
+					hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
 					format = {
 						sameDay: '[วันนี้ เวลา] HH:mm น.',
 						nextDay: '[พรุ่งนี้ เวลา] HH:mm น.',
@@ -64,15 +64,14 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 						sameElse: 'DD/MM/YYYY'
 					};
 				}
-				console.log(hw);
-
-				return `-------------------------------------------\n<:clipboard_twemoji:854925496197054504> ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
+				console.log(hw.dueDate);
+				return `-------------------------------------------\n<:clipboard_twemoji:854925496197054504> ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).tz('Asia/Bangkok').calendar(format)} ‼` : ''}`;
 			})
 	);
 };
 
 export const add = async (user: User, channel: DMChannel | TextChannel | NewsChannel) => {
-	let title: string, sub: typeof subjects[0], detail: string, dueDate: Date | string, dueTime: string;
+	let title: string, sub: typeof subjects[0], detail: string, dueDate: Date, dueTime: string;
 
 	let isCanceled = false;
 
@@ -226,7 +225,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 			logger.error(error);
 		}
 		if (msg?.deletable) msg.delete();
-		while (!dueDate || dueDate == 'Invalid Date') {
+		while (isNaN(dueDate?.valueOf())) {
 			if (received_date || isCanceled) return;
 			refmsg.edit(new MessageEmbed({
 				title: 'Homework Creation Session',
@@ -338,10 +337,9 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		const id = result.identifiers[0].id;
 		const hw = await HomeworkRepository.findOne(id);
 		if (hw.dueDate) {
-			hw.dueDate = new Date(hw.dueDate);
 			if (hw.dueTime) {
-				const [hours, mins, secs] = hw.dueTime.split(':');
-				hw.dueDate.setHours(+hours, +mins, +secs);
+				const [hours, mins] = hw.dueTime.split(':');
+				hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
 			} else {
 				hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 			}
@@ -385,9 +383,8 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 		await HomeworkRepository.softDelete(hw.id);
 		logger.debug(`deleted ${id}`);
 		if (hw.dueTime) {
-			const [hours, mins, secs] = hw.dueTime.split(':');
-			hw.dueDate = new Date(hw.dueDate);
-			hw.dueDate.setHours(+hours, +mins, +secs);
+			const [hours, mins] = hw.dueTime.split(':');
+			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
 		}
 		const format = hw.dueTime ? 'lll' : 'll';
 		channel.send(new MessageEmbed({

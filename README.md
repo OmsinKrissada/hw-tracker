@@ -19,7 +19,14 @@ mysql:
     username: hw_tracker
     password: thisisaverystrongpassword
 
-sqlite:
+postgres: # Read notice section in README.md
+    database: hw_tracker
+    hostname: example.com
+    port: 5432
+    username: hw_tracker
+    password: thisisaverystrongpassword
+
+sqlite: # Read notice section in README.md
     dbpath: hw_tracker.db
 
 color:
@@ -30,3 +37,9 @@ color:
     aqua: 0x34ebbd
     pink: 0xed37f0
 ```
+
+## Notice
+
+-   SQLite currently has problem with displaying timezones
+-   Postgres has problem syncing relation schema
+    (only MySQL is fully support at this moment)

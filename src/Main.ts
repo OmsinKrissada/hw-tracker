@@ -1,6 +1,6 @@
 import { Client, DMChannel, Guild, Interaction, MessageComponentInteraction, MessageEmbed, MessageReaction, NewsChannel, TextChannel, User } from 'discord.js';
 import schedule from 'node-schedule';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import * as Tracker from './Logic';
 import CONFIG from './ConfigManager';
@@ -35,6 +35,7 @@ const periods_end: { [key: string]: string; } = {
 };
 
 moment.locale('th');
+moment.tz.setDefault('Asia/Bangkok');
 
 
 
