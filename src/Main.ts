@@ -315,7 +315,8 @@ bot.once('ready', async () => {
 	logger.info('Class schedule registered.');
 
 	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
-	logger.info('Registering auto-delete tasks...');
+	logger.info('Registering auto-delete task(s) ...');
+	let adtCount = 0;
 	hws.forEach(hw => {
 		hw.dueDate = new Date(hw.dueDate);
 		if (hw.dueTime) {
@@ -331,13 +332,14 @@ bot.once('ready', async () => {
 			announce_channel.send({
 				embed: {
 					title: 'Auto-deleted due to hitting deadline.',
-					description: `<:clipboard_twemoji:854925496197054504> **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
+					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 					color: CONFIG.color.yellow
 				}
 			});
 		});
+		adtCount++;
 	});
-	logger.info('Auto-delete tasks registered.');
+	logger.info(`${adtCount} Auto-delete task(s) registered.`);
 
 
 

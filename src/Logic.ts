@@ -64,8 +64,8 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 						sameElse: 'DD/MM/YYYY'
 					};
 				}
-				console.log(hw.dueDate);
-				return `-------------------------------------------\n<:clipboard_twemoji:854925496197054504> ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).tz('Asia/Bangkok').calendar(format)} ‼` : ''}`;
+				// console.log(hw.dueDate);
+				return `-------------------------------------------\n📋 ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).tz('Asia/Bangkok').calendar(format)} ‼` : ''}`;
 			})
 	);
 };
@@ -349,7 +349,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 				announce_channel.send({
 					embed: {
 						title: 'Auto-deleted due to hitting deadline.',
-						description: `<:clipboard_twemoji:854925496197054504> **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
+						description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 						color: CONFIG.color.yellow
 					}
 				});
@@ -389,7 +389,7 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 		const format = hw.dueTime ? 'lll' : 'll';
 		channel.send(new MessageEmbed({
 			title: '🗑️ Homework Deleted',
-			description: `<:clipboard_twemoji:854925496197054504> **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
+			description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 			color: CONFIG.color.green
 		}));
 	}
