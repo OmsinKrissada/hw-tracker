@@ -199,7 +199,7 @@ bot.on('message', async msg => {
 			channel.send({
 				embed: {
 					title: 'Homework Menu',
-					description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
+					description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
 					color: CONFIG.color.blue,
 				},
 				components: [{
