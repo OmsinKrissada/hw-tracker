@@ -295,6 +295,9 @@ bot.on('message', async msg => {
 
 
 bot.once('ready', async () => {
+	process.on('SIGTERM', gracefulExit);
+	process.on('SIGINT', gracefulExit);
+
 	announce_guild = await bot.guilds.fetch(CONFIG.guildId);
 	announce_channel = announce_guild.channels.resolve(CONFIG.channelId) as TextChannel;
 
@@ -351,3 +354,11 @@ connectDB().then(() => {
 		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`);
 	});
 });
+
+function gracefulExit(signal: NodeJS.Signals) {
+	logger.warn('Please debug the program if this wasn\'t your intention.');
+	logger.info(`Graceful shutdown initiated with "${signal}".`);
+	bot.destroy();
+	logger.info('Successfully destroyed the bot instance.');
+	process.exit();
+}
