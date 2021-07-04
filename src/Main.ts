@@ -78,7 +78,6 @@ async function announce_upcoming(subject: typeof subjects[0]) {
 
 
 bot.on('interaction', async interaction => {
-	// console.log(interaction)
 	const channel = interaction.channel;
 	const user = interaction.user;
 
@@ -179,7 +178,6 @@ bot.on('interaction', async interaction => {
 			}
 		}
 		logger.debug(interaction.customID);
-		// interaction.deferUpdate(); // remove cuz it'll already be deleted
 	}
 });
 
@@ -188,7 +186,6 @@ bot.on('interaction', async interaction => {
 export const prefix = CONFIG.prefix;
 bot.on('message', async msg => {
 	if (msg.author.bot) return;
-	// msg.channel.send('',{reply:{}})
 	const [command, ...args] = msg.content.split(' ');
 	const channel = msg.channel;
 	const user = msg.author;
@@ -199,7 +196,12 @@ bot.on('message', async msg => {
 			channel.send({
 				embed: {
 					title: 'Homework Menu',
-					description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
+					description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n\n` +
+						`📕 <:join_arrow:845520716715917314> เหลืออีก 1 วัน\n` +
+						`📙 <:join_arrow:845520716715917314> เหลืออีก 3 วัน\n` +
+						`📗 <:join_arrow:845520716715917314> เหลือมากกว่า 3 วัน\n` +
+						`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
+						`[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
 					color: CONFIG.color.blue,
 				},
 				components: [{
@@ -289,10 +291,7 @@ bot.on('message', async msg => {
 });
 
 
-
-
-
-
+export const autoDeleteJobs = new Map<number, schedule.Job>();
 
 bot.once('ready', async () => {
 	process.on('SIGTERM', gracefulExit);
@@ -301,6 +300,7 @@ bot.once('ready', async () => {
 	announce_guild = await bot.guilds.fetch(CONFIG.guildId);
 	announce_channel = announce_guild.channels.resolve(CONFIG.channelId) as TextChannel;
 
+	// Register class start notification from subject.json
 	logger.info('Registering class schedule ...');
 	subjects.forEach(subject => {
 		subject.classes.forEach(c => {
@@ -317,9 +317,10 @@ bot.once('ready', async () => {
 	});
 	logger.info('Class schedule registered.');
 
+	// Register class schedule with given due dates
 	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
 	logger.info('Registering auto-delete task(s) ...');
-	let adtCount = 0;
+	let adtCount = 0; // adt = auto-delete task
 	hws.forEach(hw => {
 		hw.dueDate = new Date(hw.dueDate);
 		if (hw.dueTime) {
@@ -328,8 +329,7 @@ bot.once('ready', async () => {
 		} else {
 			hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 		}
-		// logger.debug(`HW ${hw.id}: ${moment(hw.dueDate).fromNow()}`)
-		schedule.scheduleJob(hw.dueDate, () => {
+		const job = schedule.scheduleJob(hw.dueDate, () => {
 			HomeworkRepository.softDelete(hw.id);
 			logger.debug(`Auto-deleted ${hw.id}`);
 			announce_channel.send({
@@ -340,13 +340,10 @@ bot.once('ready', async () => {
 				}
 			});
 		});
+		autoDeleteJobs.set(hw.id, job);
 		adtCount++;
 	});
 	logger.info(`${adtCount} Auto-delete task(s) registered.`);
-
-
-
-	// (<TextChannel>bot.channels.cache.get('853997027984539668')).send('Ready.')
 });
 
 connectDB().then(() => {

@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 import { confirm_type, sendEmbedPage } from './Helper';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
-import { announce_channel, prefix } from './Main';
+import { announce_channel, autoDeleteJobs, prefix } from './Main';
 import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
@@ -36,7 +36,7 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 		.addOrderBy('-dueTime', 'DESC')
 		.getRawMany();
 	let i = 0;
-	sendEmbedPage(<TextChannel>channel, new MessageEmbed({ color: CONFIG.color.blue }), 'Homework List',
+	sendEmbedPage(<TextChannel>channel, new MessageEmbed({ color: CONFIG.color.blue }), '📚 Homework List',
 		hws
 			.map(hw => {
 				i++;
@@ -65,7 +65,18 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 					};
 				}
 				// console.log(hw.dueDate);
-				return `-------------------------------------------\n📋 ${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}**${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).tz('Asia/Bangkok').calendar(format)} ‼` : ''}`;
+				const getBookIcon = (date: Date) => {
+					if (date?.valueOf() == 0) return '📘';
+					const diff_ms = date.valueOf() - new Date().valueOf();
+					if (diff_ms < 86400000) return '📕'; // less than a day
+					if (diff_ms < 259200000) return '📙'; // less than 3 days
+					return '📗';
+				};
+				return `-------------------------------------------\n` +
+					`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}** | \`${hw.id}\`\n\n` +
+					`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
+					`${hw.detail ? `**\nDetail**: ${hw.detail}` : ''} ` +
+					`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
 			})
 	);
 };
@@ -343,7 +354,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 			} else {
 				hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 			}
-			schedule.scheduleJob(hw.dueDate, () => {
+			const job = schedule.scheduleJob(hw.dueDate, () => {
 				HomeworkRepository.softDelete(hw.id);
 				logger.debug(`Auto-deleted ${hw.id}`);
 				announce_channel.send({
@@ -354,6 +365,7 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 					}
 				});
 			});
+			autoDeleteJobs.set(hw.id, job);
 		}
 	});
 
@@ -392,6 +404,10 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 			description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 			color: CONFIG.color.green
 		}));
-	}
+		if (autoDeleteJobs.has(hw.id)) {
+			autoDeleteJobs.get(hw.id).cancel();
+			autoDeleteJobs.delete(hw.id);
+		}
 
+	};
 };
