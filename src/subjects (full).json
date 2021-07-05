@@ -1,19 +1,19 @@
 [
 	{
 		"subID": "ว30207",
-		"name": "ฟิสิกส์",
+		"name": "การเคลื่อนที่แบบพีริออดิกและไฟฟ้าสถิตขั้นสูง",
 		"msteam": "",
 		"classes": ["1 1 2", "3 7", "4 3"]
 	},
 	{
 		"subID": "ว30106",
-		"name": "เทคโนโลยีการวิเคราะห์ข้อมูล (คอม)",
+		"name": "เทคโนโลยีการวิเคราะห์ข้อมูล",
 		"msteam": "",
 		"classes": ["1 3"]
 	},
 	{
 		"subID": "อ30103",
-		"name": "ภาษาอังกฤษพื้นฐาน",
+		"name": "ภาษาอังกฤษพื้นฐาน 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3a574e90def96d4782964101cfacecef52%40thread.tacv2/M.51?groupId=06a25139-29c0-4292-b6ea-baf277d299f5&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["1 4", "2 2"]
 	},
@@ -25,37 +25,37 @@
 	},
 	{
 		"subID": "ส30103",
-		"name": "สังคมศึกษาฯ พื้นฐาน",
+		"name": "สังคมศึกษาฯ พื้นฐาน 3",
 		"msteam": "",
 		"classes": ["1 6"]
 	},
 	{
 		"subID": "ท30103",
-		"name": "ภาษาไทยพื้นฐาน",
+		"name": "ภาษาไทยพื้นฐาน 3",
 		"msteam": "",
 		"classes": ["1 7", "4 1"]
 	},
 	{
 		"subID": "MA30103",
-		"name": "Mathematics",
+		"name": "Foundation Mathematics 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3ae1fd53e0998a49efb3b8c3c5d1821fea%40thread.tacv2/live%2520%25E0%25B8%25A1.5_1?groupId=68dded9b-cf1f-41ab-82d9-648629ba42e0&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["2 1"]
 	},
 	{
 		"subID": "ว30247",
-		"name": "สรีรวิทยาสัตว์ (ชีวะ)",
+		"name": "สรีรวิทยาสัตว์",
 		"msteam": "",
 		"classes": ["2 3 2", "5 5"]
 	},
 	{
 		"subID": "SO30103",
-		"name": "Social Studies",
+		"name": "Foundation Social Studies, Religion and Culture",
 		"msteam": "",
 		"classes": ["2 5"]
 	},
 	{
 		"subID": "ง30105",
-		"name": "การงานอาชีพพื้นฐาน",
+		"name": "การงานอาชีพพื้นฐาน 2",
 		"msteam": "",
 		"classes": ["2 6"]
 	},
@@ -67,25 +67,25 @@
 	},
 	{
 		"subID": "ค30209",
-		"name": "คณิตศาสตร์",
+		"name": "คณิตศาสตร์ขั้นสูง 3",
 		"msteam": "",
 		"classes": ["3 1 2", "4 4", "5 3"]
 	},
 	{
 		"subID": "ว30227",
-		"name": "เคมีขั้นสูง",
+		"name": "เคมีขั้นสูง 2",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3al2kOauGzSVwSCwjIuoGedXImh_HHnkZgbWJzKQ0LOEw1%40thread.tacv2/General?groupId=12f335cc-d377-4f64-9206-cb330aac074e&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["3 3 2", "4 5"]
 	},
 	{
 		"subID": "ส30109",
-		"name": "ประวัติศาสตร์",
+		"name": "ประวัติศาสตร์ 3",
 		"msteam": "",
 		"classes": ["3 5"]
 	},
 	{
 		"subID": "อ30233",
-		"name": "ภาษาอังกฤษเชิงวิชาการ (AUA)",
+		"name": "ภาษาอังกฤษเชิงวิชาการ 3",
 		"msteam": "",
 		"classes": ["3 6", "4 2"]
 	},
@@ -97,13 +97,13 @@
 	},
 	{
 		"subID": "ศ30105",
-		"name": "ศิลปะพื้นฐาน",
+		"name": "ศิลปะพื้นฐาน 5",
 		"msteam": "",
 		"classes": ["5 4"]
 	},
 	{
 		"subID": "อ30215",
-		"name": "ภาษาอังกฤษเพื่อการประยุกต์",
+		"name": "ภาษาอังกฤษพื่อการประยุกต์ 3",
 		"msteam": "https://teams.microsoft.com/l/channel/19%3acaafd3c021f543689cf085aff807649d%40thread.tacv2/M5_1?groupId=50e0f6f3-84fe-47ea-a746-17d135ec2ae5&tenantId=30a0ab2e-68f9-4132-9e57-f3022fc2eefa",
 		"classes": ["5 6"]
 	}

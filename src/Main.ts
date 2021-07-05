@@ -94,7 +94,7 @@ bot.on('interaction', async interaction => {
 					break;
 				case 'hw_remove':
 					const prompt_promise = channel.send({
-						embed: { title: 'Please enter homework ID to delete.', description: '(สามารถดู ID ได้จากคำสั่ง list)' },
+						embed: { title: 'Please enter homework ID to delete.', description: '(ID คือเลขหลังชื่อการบ้านในในคำสั่ง list)' },
 						components: [{
 							type: 1,
 							components: [{
