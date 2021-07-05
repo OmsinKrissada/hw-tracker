@@ -297,6 +297,8 @@ bot.once('ready', async () => {
 	process.on('SIGTERM', gracefulExit);
 	process.on('SIGINT', gracefulExit);
 
+	bot.user.setPresence({ activities: [{ name: ` ${prefix}`, type: 'LISTENING' }] });
+
 	announce_guild = await bot.guilds.fetch(CONFIG.guildId);
 	announce_channel = announce_guild.channels.resolve(CONFIG.channelId) as TextChannel;
 
