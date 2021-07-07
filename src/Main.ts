@@ -1,4 +1,4 @@
-import { Client, DMChannel, Guild, Interaction, MessageComponentInteraction, MessageEmbed, MessageReaction, NewsChannel, TextChannel, User } from 'discord.js';
+import { Client, DMChannel, Guild, Interaction, Message, MessageComponentInteraction, MessageEmbed, MessageReaction, NewsChannel, TextChannel, User } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
@@ -51,7 +51,10 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 		color: Math.floor(Math.random() * (16777215 - 0 + 1)),
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
-	announce_channel.send(`<@&${CONFIG.subscriber_role}>`, { embed: embed }).then(msg => {
+	announce_channel.send({
+		content: `<@&${CONFIG.subscriber_role}>`,
+		embeds: [embed]
+	}).then(msg => {
 		setTimeout(() => {
 			msg.delete();
 		}, 3600000 * length);
@@ -74,224 +77,6 @@ async function announce_upcoming(subject: typeof subjects[0]) {
 
 
 
-
-
-
-bot.on('interaction', async interaction => {
-	const channel = interaction.channel;
-	const user = interaction.user;
-
-	if (interaction.isMessageComponent() && channel.isText()) {
-		if (interaction.customID.startsWith('hw')) {
-			if (channel.messages.resolve(interaction.message.id).deletable) channel.messages.resolve(interaction.message.id).delete();
-			switch (interaction.customID) {
-				case 'hw_list':
-					logger.debug('listing from interaction');
-					Tracker.list(channel);
-					break;
-				case 'hw_add':
-					Tracker.add(user, channel);
-					break;
-				case 'hw_remove':
-					const prompt_promise = channel.send({
-						embed: { title: 'Please enter homework ID to delete.', description: '(ID คือเลขหลังชื่อการบ้านในในคำสั่ง list)' },
-						components: [{
-							type: 1,
-							components: [{
-								type: 2,
-								label: 'Cancel',
-								style: 4,
-								customID: 'cancel_remove'
-							}]
-						}]
-					});
-					let received = false;
-					const reply_promise = channel.awaitMessages(m => m.author.id == user.id, { max: 1 }).then(async collected => {
-						if (received) return;
-						received = true;
-						const content = collected.first()?.content;
-						if (content) {
-							if (isNaN(+content))
-								channel.send({
-									embed: {
-										title: 'Invalid',
-										description: `Invalid homework ID: \`${content}\``,
-										color: CONFIG.color.red
-									}
-								});
-							else {
-								Tracker.remove(user, channel, +content);
-							}
-						} else {
-							channel.send({
-								embed: {
-									title: 'Please provide homework ID',
-									description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
-									color: CONFIG.color.red
-								}
-							});
-						}
-						if ((await prompt_promise)?.deletable) (await prompt_promise).delete();
-					});
-					const cancel_promise = (await prompt_promise).awaitMessageComponentInteractions(i => i.user.id == user.id, { maxComponents: 1 }).then(async collected => {
-						if (received) return;
-						received = true;
-						const interaction = collected.first();
-						interaction.reply('You\'ve canceled homework deletion.');
-						if ((await prompt_promise)?.deletable) (await prompt_promise).delete();
-					});
-
-					await Promise.race([reply_promise, cancel_promise]);
-
-					break;
-
-			}
-		} if (interaction.customID.startsWith('myhw')) {
-			switch (interaction.customID) {
-				case 'myhw_list':
-					// Tracker.add(user, channel)
-					const m = await channel.send({
-						embed: {
-							description: '**Homework Menus**',
-							color: CONFIG.color.blue,
-						},
-						components: [{
-							type: 1,
-							components: [{
-								type: 2,
-								label: 'List homework',
-								style: 1,
-								customID: 'idk'
-							}]
-						}]
-					});
-					m.awaitMessageComponentInteractions(i => i.customID == 'idk', { maxComponents: 1 }).then(collected => {
-						logger.debug('tryyyyinngggg');
-						m.edit({ components: [] });
-					});
-					break;
-				case 'myhw_checka':
-					Tracker.add(user, channel);
-					break;
-				case 'myhw_a':
-					break;
-			}
-		}
-		logger.debug(interaction.customID);
-	}
-});
-
-
-
-export const prefix = CONFIG.prefix;
-bot.on('message', async msg => {
-	if (msg.author.bot) return;
-	const [command, ...args] = msg.content.split(' ');
-	const channel = msg.channel;
-	const user = msg.author;
-
-
-	switch (command.toLowerCase()) {
-		case `${prefix}`: {
-			channel.send({
-				embed: {
-					title: 'Homework Menu',
-					description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n\n` +
-						`📕 <:join_arrow:845520716715917314> เหลืออีก 1 วัน\n` +
-						`📙 <:join_arrow:845520716715917314> เหลืออีก 3 วัน\n` +
-						`📗 <:join_arrow:845520716715917314> เหลือมากกว่า 3 วัน\n` +
-						`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
-						`[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
-					color: CONFIG.color.blue,
-				},
-				components: [{
-					type: 1,
-					components: [{
-						type: 2,
-						label: 'List homework',
-						style: 1,
-						customID: 'hw_list'
-					},
-					{
-						type: 2,
-						label: '➕ Add',
-						style: 2,
-						customID: 'hw_add'
-					},
-					{
-						type: 2,
-						label: '➖ Remove',
-						style: 2,
-						customID: 'hw_remove'
-					}]
-				}]
-			});
-			break;
-		}
-		case `${prefix}list`:
-			Tracker.list(channel);
-			break;
-		case `${prefix}add`:
-			Tracker.add(user, channel);
-			break;
-		case `${prefix}rm`:
-			if (args[0]) {
-				if (isNaN(+args[0]))
-					channel.send(new MessageEmbed({
-						title: 'Invalid',
-						description: `Invalid homework ID: \`${args[0]}\``,
-						color: CONFIG.color.red
-					}));
-				else {
-					Tracker.remove(user, channel, +args[0]);
-				}
-			} else {
-				channel.send(new MessageEmbed({
-					title: 'Please provide homework ID',
-					description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
-					color: CONFIG.color.red
-				}));
-			}
-			break;
-		case `my${prefix}`: {
-			channel.send('Homework Menu (THIS DOESN\'T WORK YET!!!) >>', {
-				// embed: {
-				// 	title: 'Homework Menu',
-				// 	description: `**กดปุ่มด้านล่าง**\nหรือใช้คำสั่งต่อไปนี้:\n\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
-				// 	color: CONFIG.color.blue,
-				// },
-				components: [{
-					type: 1,
-					components: [{
-						type: 2,
-						label: 'List my unfinished tasks',
-						style: 1,
-						customID: 'myhw_list'
-					},
-					{
-						type: 2,
-						label: 'Mark a task as done',
-						emoji: { id: '849685283459825714', name: 'checked' },
-						style: 2,
-						customID: 'myhw_add'
-					},
-					{
-						type: 2,
-						label: 'Mark a task as undone',
-						emoji: { id: '849697672884650065', name: 'unchecked' },
-						style: 2,
-						customID: 'myhw_remove'
-					}]
-				}]
-			});
-			break;
-		}
-	}
-
-});
-
-
-export const autoDeleteJobs = new Map<number, schedule.Job>();
 
 bot.once('ready', async () => {
 	process.on('SIGTERM', gracefulExit);
@@ -335,18 +120,227 @@ bot.once('ready', async () => {
 			HomeworkRepository.softDelete(hw.id);
 			logger.debug(`Auto-deleted ${hw.id}`);
 			announce_channel.send({
-				embed: {
+				embeds: [{
 					title: 'Auto-deleted due to hitting deadline.',
 					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 					color: CONFIG.color.yellow
-				}
+				}]
 			});
 		});
 		autoDeleteJobs.set(hw.id, job);
 		adtCount++;
 	});
 	logger.info(`${adtCount} Auto-delete task(s) registered.`);
+
+	bot.application.commands.set([{
+		name: 'hw',
+		description: 'Opens homework menu.',
+	},
+	{
+		name: 'list',
+		description: 'Lists all homework.',
+	},
+	{
+		name: 'add',
+		description: 'Adds a task to global homework list.',
+	},
+	{
+		name: 'remove',
+		description: 'Deletes a task from global homework list.',
+		options: [{ type: 'INTEGER', description: 'Homework ID', name: 'id', required: true }],
+	}], '709824110229979278').then(() => logger.info('Command set.'));
 });
+
+bot.on('interactionCreate', async interaction => {
+	if (!interaction.channel.isText()) return;
+	const channel = interaction.channel;
+	const user = interaction.user;
+
+
+	if (interaction.isCommand()) {
+		// console.log(interaction);
+		switch (interaction.command.name) {
+			case 'hw': {
+				interaction.reply({
+					embeds: [{
+						title: 'Homework Menu',
+						description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n\n` +
+							`📕 <:join_arrow:845520716715917314> เหลืออีก 1 วัน\n` +
+							`📙 <:join_arrow:845520716715917314> เหลืออีก 3 วัน\n` +
+							`📗 <:join_arrow:845520716715917314> เหลือมากกว่า 3 วัน\n` +
+							`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
+							`Also available using \`/list\`, \`/add\` or \`/remove\`!\n\n` +
+							`[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
+						color: CONFIG.color.blue,
+					}],
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							label: 'List homework',
+							style: 'PRIMARY',
+							customId: 'hw_list'
+						},
+						{
+							type: 'BUTTON',
+							label: '➕ Add',
+							style: 'SECONDARY',
+							customId: 'hw_add'
+						},
+						{
+							type: 'BUTTON',
+							label: '➖ Remove',
+							style: 'SECONDARY',
+							customId: 'hw_remove'
+						}]
+					}]
+				});
+				break;
+			}
+			case 'list': {
+				Tracker.list(interaction);
+				break;
+			}
+			case 'add': {
+				Tracker.add(interaction);
+				break;
+			}
+			case 'remove': {
+				const id = interaction.options.get('id').value as number;
+				Tracker.remove(interaction, id);
+				break;
+			}
+		}
+	}
+
+	if (interaction.isButton()) {
+		if (interaction.customId.startsWith('hw')) {
+			// if (channel.messages.resolve(interaction.message.id).deletable) channel.messages.resolve(interaction.message.id).delete();
+			switch (interaction.customId) {
+				case 'hw_list':
+					logger.debug('listing from interaction');
+					interaction.deferUpdate();
+					Tracker.list(interaction);
+					break;
+				case 'hw_add':
+					interaction.deferUpdate();
+					Tracker.add(interaction);
+					break;
+				case 'hw_remove':
+					interaction.update({
+						embeds: [{ title: 'Please enter homework ID to delete.', description: '(ID คือเลขหลังชื่อการบ้านในในคำสั่ง list)' }],
+						components: [{
+							type: 'ACTION_ROW',
+							components: [{
+								type: 'BUTTON',
+								label: 'Cancel',
+								style: 'DANGER',
+								customId: 'cancel_remove'
+							}]
+						}]
+					});
+					let received = false;
+					const reply_promise = channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1 }).then(async collected => {
+						if (received) return;
+						received = true;
+						const content = collected.first()?.content;
+						if (content) {
+							if (isNaN(+content))
+								(interaction.message as Message).edit({
+									embeds: [{
+										title: 'Invalid',
+										description: `Invalid homework ID: \`${content}\``,
+										color: CONFIG.color.red
+									}],
+									components: []
+								});
+							else {
+								Tracker.remove(interaction, +content);
+							}
+						} else {
+							(interaction.message as Message).edit({
+								embeds: [{
+									title: 'Please provide homework ID',
+									description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
+									color: CONFIG.color.red
+								}],
+								components: []
+							});
+						}
+						if (collected.first().deletable) collected.first().delete();
+					});
+
+					const cancel_promise = (<Message>interaction.message).awaitMessageComponent({ filter: i => i.user.id == user.id }).then(async interaction => {
+						if (received) return;
+						received = true;
+						interaction.update({ content: 'You\'ve canceled homework deletion.', embeds: [], components: [] });
+					});
+
+					await Promise.race([reply_promise, cancel_promise]);
+
+					break;
+
+			}
+		}
+		logger.debug(interaction.customId);
+	}
+});
+
+
+
+export const prefix = CONFIG.prefix;
+bot.on('messageCreate', async msg => {
+	if (msg.author.bot) return;
+	const [command, ...args] = msg.content.split(' ');
+	const channel = msg.channel;
+	const user = msg.author;
+
+
+	switch (command.toLowerCase()) {
+		case `${prefix}`: {
+			channel.send('Please use `/hw` instead, thank you. :)');
+			break;
+		}
+		case `my${prefix}`: {
+			channel.send({
+				content: 'Homework Menu (THIS DOESN\'T WORK YET!!!) >>',
+				// embed: {
+				// 	title: 'Homework Menu',
+				// 	description: `**กดปุ่มด้านล่าง**\nหรือใช้คำสั่งต่อไปนี้:\n\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
+				// 	color: CONFIG.color.blue,
+				// },
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						label: 'List my unfinished tasks',
+						style: 'PRIMARY',
+						customId: 'myhw_list',
+					},
+					{
+						type: 'BUTTON',
+						label: 'Mark a task as done',
+						emoji: { id: '849685283459825714', name: 'checked' },
+						style: 'SECONDARY',
+						customId: 'myhw_add'
+					},
+					{
+						type: 'BUTTON',
+						label: 'Mark a task as undone',
+						emoji: { id: '849697672884650065', name: 'unchecked' },
+						style: 'SECONDARY',
+						customId: 'myhw_remove'
+					}]
+				}]
+			});
+			break;
+		}
+	}
+
+});
+
+
+export const autoDeleteJobs = new Map<number, schedule.Job>();
 
 connectDB().then(() => {
 	bot.login(CONFIG.token).then(() => {

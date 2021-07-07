@@ -12,7 +12,7 @@
 	"author": "",
 	"license": "MIT",
 	"dependencies": {
-		"discord.js": "github:discordjs/discord.js#32d8c8ba940b31ab577c3de518fef382fe33a60d",
+		"discord.js": "github:discordjs/discord.js#755c180659c125532fe6f8e33e6c3b56e275311b",
 		"js-yaml": "^3.14.1",
 		"moment": "^2.29.1",
 		"moment-timezone": "^0.5.33",

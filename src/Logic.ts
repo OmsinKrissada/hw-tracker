@@ -1,8 +1,8 @@
-import { Client, DMChannel, Guild, Interaction, MessageComponentInteraction, MessageEmbed, MessageReaction, NewsChannel, TextChannel, User } from 'discord.js';
+import { ButtonInteraction, Client, CommandInteraction, DMChannel, Guild, Interaction, InteractionUpdateOptions, Message, MessageComponentInteraction, MessageEmbed, MessagePayload, MessageReaction, NewsChannel, PartialDMChannel, TextChannel, ThreadChannel, User, WebhookEditMessageOptions } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
-import { confirm_type, sendEmbedPage } from './Helper';
+import { condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
 import { announce_channel, autoDeleteJobs, prefix } from './Main';
@@ -28,7 +28,12 @@ async function getSubjectFromName(partialName: string, caller: User, channel: Te
 	return sub;
 }
 
-export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
+type ConsideringInteraction = CommandInteraction | ButtonInteraction;
+
+export const list = async (interaction: ConsideringInteraction) => {
+	const { channel } = interaction;
+	if (!channel.isText()) return;
+
 	const hws: Homework[] = await HomeworkRepository
 		.createQueryBuilder()
 		.select('*')
@@ -36,78 +41,114 @@ export const list = async (channel: DMChannel | TextChannel | NewsChannel) => {
 		.addOrderBy('-dueTime', 'DESC')
 		.getRawMany();
 	let i = 0;
-	sendEmbedPage(<TextChannel>channel, new MessageEmbed({ color: CONFIG.color.blue }), '📚 Homework List',
-		hws
-			.map(hw => {
-				i++;
-				let format;
-				hw.dueDate = new Date(hw.dueDate);
-				hw.createdAt = new Date(hw.createdAt);
-				if (hw.dueTime) {
-					const [hours, mins] = hw.dueTime.split(':');
-					hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
-					format = {
-						sameDay: '[วันนี้ เวลา] HH:mm น.',
-						nextDay: '[พรุ่งนี้ เวลา] HH:mm น.',
-						nextWeek: 'dddd[นี้ เวลา] HH:mm น.',
-						lastDay: '[เมื่อวานนี้ เวลา] HH:mm น.',
-						lastWeek: 'dddd[ที่แล้ว เวลา] HH:mm น.',
-						sameElse: 'DD/MM/YYYY [เวลา] HH:mm น.'
-					};
-				} else {
-					format = {
-						sameDay: '[วันนี้]',
-						nextDay: '[พรุ่งนี้]',
-						nextWeek: 'dddd[นี้]',
-						lastDay: '[เมื่อวานนี้]',
-						lastWeek: 'dddd[ที่แล้ว]',
-						sameElse: 'DD/MM/YYYY'
-					};
-				}
-				// console.log(hw.dueDate);
-				const getBookIcon = (date: Date) => {
-					if (date?.valueOf() == 0) return '📘';
-					const diff_ms = date.valueOf() - new Date().valueOf();
-					if (diff_ms < 86400000) return '📕'; // less than a day
-					if (diff_ms < 259200000) return '📙'; // less than 3 days
-					return '📗';
-				};
-				return `-------------------------------------------\n` +
-					`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}** | \`${hw.id}\`\n\n` +
-					`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
-					`${hw.detail ? `**\nDetail**: ${hw.detail}` : ''} ` +
-					`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
-			})
-	);
+	const condensed = condenseArrayByLengthLimit(hws.map(hw => {
+		i++;
+		let format;
+		hw.dueDate = new Date(hw.dueDate);
+		hw.createdAt = new Date(hw.createdAt);
+		if (hw.dueTime) {
+			const [hours, mins] = hw.dueTime.split(':');
+			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
+			format = {
+				sameDay: '[วันนี้ เวลา] HH:mm น.',
+				nextDay: '[พรุ่งนี้ เวลา] HH:mm น.',
+				nextWeek: 'dddd[นี้ เวลา] HH:mm น.',
+				lastDay: '[เมื่อวานนี้ เวลา] HH:mm น.',
+				lastWeek: 'dddd[ที่แล้ว เวลา] HH:mm น.',
+				sameElse: 'DD/MM/YYYY [เวลา] HH:mm น.'
+			};
+		} else {
+			format = {
+				sameDay: '[วันนี้]',
+				nextDay: '[พรุ่งนี้]',
+				nextWeek: 'dddd[นี้]',
+				lastDay: '[เมื่อวานนี้]',
+				lastWeek: 'dddd[ที่แล้ว]',
+				sameElse: 'DD/MM/YYYY'
+			};
+		}
+		// console.log(hw.dueDate);
+		const getBookIcon = (date: Date) => {
+			if (date?.valueOf() == 0) return '📘';
+			const diff_ms = date.valueOf() - new Date().valueOf();
+			if (diff_ms < 86400000) return '📕'; // less than a day
+			if (diff_ms < 259200000) return '📙'; // less than 3 days
+			return '📗';
+		};
+		return `**-------------------------------------------**\n` +
+			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}** | \`${hw.id}\`\n\n` +
+			`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
+			`${hw.detail ? `**\nDetail**: ${hw.detail}` : ''} ` +
+			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
+	}), 1024);
+	const pages = condensed.map(c => { return { embeds: [{ title: '📚 Homework List', color: CONFIG.color.blue, description: c }], fetchReply: true }; });
+
+	if (interaction.isCommand()) {
+		const prompt = await interaction.reply({ embeds: [{ title: '<a:loading:845534883396583435>' }], fetchReply: true }) as Message;
+		sendPage({ textChannel: channel, pages: pages, appendPageNumber: true, preMessage: prompt });
+	} else if (interaction.message instanceof Message) {
+		const prompt = await interaction.message.edit({ embeds: [{ title: '<a:loading:845534883396583435>' }], components: [] });
+		sendPage({ textChannel: channel, pages: pages, appendPageNumber: true, preMessage: prompt });
+	}
 };
 
-export const add = async (user: User, channel: DMChannel | TextChannel | NewsChannel) => {
-	let title: string, sub: typeof subjects[0], detail: string, dueDate: Date, dueTime: string;
+export const add = async (interaction: ConsideringInteraction) => {
+	const { user, channel } = interaction;
+	if (!channel.isText()) return;
 
+	let title: string, sub: typeof subjects[0], detail: string, dueDate: Date, dueTime: string;
 	let isCanceled = false;
 
+
+	const editPrompt = (options: (string | MessagePayload | WebhookEditMessageOptions) & (InteractionUpdateOptions & { fetchReply?: true; })) => {
+		if (interaction.isCommand()) { interaction.editReply(options); return; }
+		if (interaction.isButton()) { (interaction.message as Message).edit(options); }
+	};
+
+	let prompt_msg: Message;
 	// input topic
-	const refmsg = await channel.send({
-		embed: {
-			title: 'Homework Creation Session',
-			description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
-			color: CONFIG.color.pink
-		}, components: [{
-			type: 1,
-			components: [{
-				type: 2,
-				label: 'Cancel',
-				style: 4,
-				customID: 'cancel_add'
+	if (interaction.isCommand()) {
+		prompt_msg = await interaction.reply({
+			embeds: [{
+				title: 'Homework Creation Session',
+				description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
+				color: CONFIG.color.pink
+			}], components: [{
+				type: 'ACTION_ROW',
+				components: [{
+					type: 'BUTTON',
+					label: 'Cancel',
+					style: 'DANGER',
+					customId: 'cancel_add'
+				}]
+			}],
+			fetchReply: true
+		}) as Message;
+	} else {
+		prompt_msg = interaction.message as Message;
+		editPrompt({
+			embeds: [{
+				title: 'Homework Creation Session',
+				description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
+				color: CONFIG.color.pink
+			}], components: [{
+				type: 'ACTION_ROW',
+				components: [{
+					type: 'BUTTON',
+					label: 'Cancel',
+					style: 'DANGER',
+					customId: 'cancel_add'
+				}]
 			}]
-		}]
-	});
-	refmsg.awaitMessageComponentInteractions(i => i.user.id == user.id && i.isMessageComponent() && i.customID == 'cancel_add', { maxComponents: 1 }).then(() => {
+		});
+	}
+
+	prompt_msg.awaitMessageComponent({ filter: i => i.user.id == user.id && i.isMessageComponent() && i.customId == 'cancel_add' }).then(() => {
 		isCanceled = true;
-		refmsg.edit({ embed: { title: 'Session Canceled', description: 'Homework Creation Session was canceled by user.', color: CONFIG.color.red }, components: [] });
+		editPrompt({ content: `You've canceled homework creation.`, embeds: [], components: [] });
 	});
 	if (isCanceled) return;
-	await channel.awaitMessages(m => m.author.id == user.id, { maxProcessed: 1, time: 300000 }).then(_m => {
+	await channel.awaitMessages({ filter: m => m.author.id == user.id, maxProcessed: 1, time: 300000 }).then(_m => {
 		if (isCanceled) return;
 		const m = _m.first();
 		title = m.content;
@@ -116,22 +157,22 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 
 	// input subject
 	if (isCanceled) return;
-	refmsg.edit({
-		embed: {
+	editPrompt({
+		embeds: [{
 			title: 'Homework Creation Session',
 			description: `**หัวข้อการบ้าน**: "${title}"\n-----------------------------------\nกรุณาใส่ __ชื่อวิชา__ ลงในแชท`,
 			color: CONFIG.color.pink
-		}, components: [{
+		}], components: [{
 			type: 1,
 			components: [{
 				type: 2,
 				label: 'Cancel',
 				style: 4,
-				customID: 'cancel_add'
+				customId: 'cancel_add',
 			}]
 		}]
 	});
-	await channel.awaitMessages(m => m.author.id == user.id, { maxProcessed: 1, time: 300000 }).then(async _m => {
+	await channel.awaitMessages({ filter: m => m.author.id == user.id, maxProcessed: 1, time: 300000 }).then(async _m => {
 		if (isCanceled) return;
 		const m = _m.first();
 		if (m?.deletable) m.delete();
@@ -140,12 +181,14 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		sub = (await getSubjectFromName(subject_name, user, <TextChannel>channel));
 		logger.debug(`SubID in creation session: ${sub?.subID}`);
 		while (!sub && !isCanceled) {
-			refmsg.edit(new MessageEmbed({
-				title: 'Homework Creation Session',
-				description: `**ขออภัย, ไม่พบวิชา "${subject_name}"**\nกรุณาเช็คการสะกดคำหรือดูชื่อวิชาจากตารางสอน`,
-				color: CONFIG.color.yellow
-			}));
-			await channel.awaitMessages(m => m.author.id == user.id, { max: 1, time: 300000 }).then(_innerm => {
+			editPrompt({
+				embeds: [{
+					title: 'Homework Creation Session',
+					description: `**ขออภัย, ไม่พบวิชา "${subject_name}"**\nกรุณาเช็คการสะกดคำหรือดูชื่อวิชาจากตารางสอน`,
+					color: CONFIG.color.yellow
+				}]
+			});
+			await channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(_innerm => {
 				if (isCanceled) return;
 				const innerm = _innerm.first();
 				subject_name = innerm?.content;
@@ -158,39 +201,39 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 
 	// input description
 	if (isCanceled) return;
-	refmsg.edit({
-		embed: {
+	editPrompt({
+		embeds: [{
 			title: 'Homework Creation Session',
 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})" \n---------------------------------------------------\nกรุณาใส่ __ข้อมูลเพิ่มเติม__ ลงในแชท (กดข้ามได้)`,
 			color: CONFIG.color.pink
-		},
+		}],
 		components: [{
 			type: 1,
 			components: [{
 				type: 2,
 				label: 'Skip',
 				style: 2,
-				customID: 'skip_section'
+				customId: 'skip_section'
 			},
 			{
 				type: 2,
 				label: 'Cancel',
 				style: 4,
-				customID: 'cancel_add'
+				customId: 'cancel_add'
 			}]
 		}]
 	});
 
 	let received_desc = false;
-	const desc_reply_promise = channel.awaitMessages(m => m.author.id == user.id, { max: 1, time: 300000 }).then(collected => {
+	const desc_reply_promise = channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(collected => {
 		if (received_desc || isCanceled) return;
 		received_desc = true;
 		const m = collected.first();
 		detail = m.content;
 		if (m?.deletable) m.delete();
 	});
-	const desc_skip_promise = refmsg.awaitMessageComponentInteractions(interaction => interaction.customID == 'skip_section' && interaction.user.id == user.id && interaction.isMessageComponent(), { maxComponents: 1, time: 300000 }).then(collected => {
-		collected.first().deferUpdate();
+	const desc_skip_promise = prompt_msg.awaitMessageComponent({ filter: interaction => interaction.customId == 'skip_section' && interaction.user.id == user.id, componentType: 'BUTTON', time: 300000 }).then(button => {
+		button.deferUpdate();
 		if (received_desc || isCanceled) return;
 		received_desc = true;
 		logger.debug('skipped');
@@ -200,31 +243,31 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 
 	// input date
 	if (isCanceled) return;
-	refmsg.edit({
-		embed: {
+	editPrompt({
+		embeds: [{
 			title: 'Homework Creation Session',
 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail} \n---------------------------------------------------\nกรุณาใส่ __วันส่ง__ ลงในแชท (กดข้ามได้)\nรูปแบบคือ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
 			color: CONFIG.color.pink
-		},
+		}],
 		components: [{
 			type: 1,
 			components: [{
 				type: 2,
 				label: 'Skip',
 				style: 2,
-				customID: 'skip_section'
+				customId: 'skip_section'
 			},
 			{
 				type: 2,
 				label: 'Cancel',
 				style: 4,
-				customID: 'cancel_add'
+				customId: 'cancel_add'
 			}]
 		}]
 	});
 
 	let received_date = false;
-	const date_reply_promise = channel.awaitMessages(m => m.author.id == user.id && m.content != null, { max: 1, time: 300000 }).then(async collected => {
+	const date_reply_promise = channel.awaitMessages({ filter: m => m.author.id == user.id && m.content != null, max: 1, time: 300000 }).then(async collected => {
 		if (received_date || isCanceled) return;
 		const msg = collected.first();
 		try {
@@ -238,12 +281,14 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		if (msg?.deletable) msg.delete();
 		while (isNaN(dueDate?.valueOf())) {
 			if (received_date || isCanceled) return;
-			refmsg.edit(new MessageEmbed({
-				title: 'Homework Creation Session',
-				description: `รูปแบบวันไม่ถูกต้อง กรุณาใส่วันในรูปแบบ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
-				color: CONFIG.color.yellow
-			}));
-			await channel.awaitMessages(m => m.author.id == user.id, { max: 1, time: 300000 }).then(innerCollected => {
+			editPrompt({
+				embeds: [{
+					title: 'Homework Creation Session',
+					description: `รูปแบบวันไม่ถูกต้อง กรุณาใส่วันในรูปแบบ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
+					color: CONFIG.color.yellow
+				}]
+			});
+			await channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(innerCollected => {
 				if (isCanceled) return;
 				const innermsg = innerCollected.first();
 				const [day, month, year] = innermsg.content.split('/');
@@ -255,8 +300,8 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 		}
 		received_date = true;
 	});
-	const date_skip_promise = refmsg.awaitMessageComponentInteractions(interaction => interaction.customID == 'skip_section' && interaction.user.id == user.id && interaction.isMessageComponent(), { maxComponents: 1, time: 300000 }).then(collected => {
-		collected.first().deferUpdate();
+	const date_skip_promise = prompt_msg.awaitMessageComponent({ filter: interaction => interaction.customId == 'skip_section' && interaction.user.id == user.id, componentType: 'BUTTON', time: 300000 }).then(button => {
+		button.deferUpdate();
 		if (received_date || isCanceled) return;
 		received_date = true;
 		logger.debug('skipped date');
@@ -267,31 +312,31 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 	// input time only if provide date
 	if (dueDate) {
 		if (isCanceled) return;
-		refmsg.edit({
-			embed: {
+		editPrompt({
+			embeds: [{
 				title: 'Homework Creation Session',
 				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Due Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __เวลาส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
 				color: CONFIG.color.pink
-			},
+			}],
 			components: [{
 				type: 1,
 				components: [{
 					type: 2,
 					label: 'Skip',
 					style: 2,
-					customID: 'skip_section'
+					customId: 'skip_section'
 				},
 				{
 					type: 2,
 					label: 'Cancel',
 					style: 4,
-					customID: 'cancel_add'
+					customId: 'cancel_add'
 				}]
 			}]
 		});
 
 		let received_time = false;
-		const time_reply_promise = channel.awaitMessages(m => m.author.id == user.id && m.content != null, { max: 1, time: 300000 }).then(async collected => {
+		const time_reply_promise = channel.awaitMessages({ filter: m => m.author.id == user.id && m.content != null, max: 1, time: 300000 }).then(async collected => {
 			if (received_time || isCanceled) return;
 			const msg = collected.first();
 			try {
@@ -305,12 +350,14 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 			if (msg?.deletable) msg.delete();
 			while (!dueTime) {
 				if (received_time || isCanceled) return;
-				refmsg.edit(new MessageEmbed({
-					title: 'Homework Creation Session',
-					description: `รูปแบบเวลาไม่ถูกต้อง กรุณาใส่วันในรูปแบบ hh:mm เช่น \`18:00\``,
-					color: CONFIG.color.yellow
-				}));
-				await channel.awaitMessages(m => m.author.id == user.id, { max: 1, time: 300000 }).then(innerCollected => {
+				editPrompt({
+					embeds: [{
+						title: 'Homework Creation Session',
+						description: `รูปแบบเวลาไม่ถูกต้อง กรุณาใส่วันในรูปแบบ hh:mm เช่น \`18:00\``,
+						color: CONFIG.color.yellow
+					}]
+				});
+				await channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(innerCollected => {
 					if (isCanceled) return;
 					const innermsg = innerCollected.first();
 					const [hour, min] = innermsg.content.split(':');
@@ -322,8 +369,8 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 			}
 			received_time = true;
 		});
-		const time_skip_promise = refmsg.awaitMessageComponentInteractions(interaction => interaction.customID == 'skip_section' && interaction.user.id == user.id && interaction.isMessageComponent(), { maxComponents: 1, time: 300000 }).then(collected => {
-			collected.first().deferUpdate();
+		const time_skip_promise = prompt_msg.awaitMessageComponent({ filter: interaction => interaction.customId == 'skip_section' && interaction.user.id == user.id, componentType: 'BUTTON', time: 300000 }).then(button => {
+			button.deferUpdate();
 			if (received_time || isCanceled) return;
 			received_time = true;
 			logger.debug('skipped time');
@@ -337,12 +384,12 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 	// Insert to database
 	if (isCanceled) return;
 	HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, dueDate: dueDate, dueTime: dueTime, author: user.id }).then(async result => {
-		refmsg.edit({
-			embed: {
+		editPrompt({
+			embeds: [{
 				title: '<:checkmark:849685283459825714> Creation Successful',
 				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('ll')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
 				color: CONFIG.color.green
-			},
+			}],
 			components: []
 		});
 		const id = result.identifiers[0].id;
@@ -358,11 +405,11 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 				HomeworkRepository.softDelete(hw.id);
 				logger.debug(`Auto-deleted ${hw.id}`);
 				announce_channel.send({
-					embed: {
+					embeds: [{
 						title: 'Auto-deleted due to hitting deadline.',
 						description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 						color: CONFIG.color.yellow
-					}
+					}]
 				});
 			});
 			autoDeleteJobs.set(hw.id, job);
@@ -383,13 +430,24 @@ export const add = async (user: User, channel: DMChannel | TextChannel | NewsCha
 	*/
 };
 
-export const remove = async (user: User, channel: DMChannel | TextChannel | NewsChannel, id: number) => {
+export const remove = async (interaction: ConsideringInteraction, id: number) => {
+	const { channel } = interaction;
+	if (!channel.isText()) return;
+
+	const editPrompt = (options: (string | MessagePayload | WebhookEditMessageOptions) & (InteractionUpdateOptions & { fetchReply?: true; })) => {
+		if (interaction.isCommand()) interaction.reply(options);
+		else if (interaction.isButton()) (interaction.message as Message).edit(options);
+	};
+
 	if (await HomeworkRepository.count({ id: id }) < 1)
-		channel.send(new MessageEmbed({
-			title: 'Not Found',
-			description: `Cannot find homework with ID: \`${id}\``,
-			color: CONFIG.color.red
-		}));
+		editPrompt({
+			embeds: [{
+				title: 'Not Found',
+				description: `Cannot find homework with ID: \`${id}\``,
+				color: CONFIG.color.red
+			}],
+			components: []
+		});
 	else {
 		const hw = await HomeworkRepository.findOne({ id: id });
 		await HomeworkRepository.softDelete(hw.id);
@@ -399,11 +457,14 @@ export const remove = async (user: User, channel: DMChannel | TextChannel | News
 			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
 		}
 		const format = hw.dueTime ? 'lll' : 'll';
-		channel.send(new MessageEmbed({
-			title: '🗑️ Homework Deleted',
-			description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
-			color: CONFIG.color.green
-		}));
+		editPrompt({
+			embeds: [{
+				title: '🗑️ Homework Deleted',
+				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
+				color: CONFIG.color.green
+			}],
+			components: []
+		});
 		if (autoDeleteJobs.has(hw.id)) {
 			autoDeleteJobs.get(hw.id).cancel();
 			autoDeleteJobs.delete(hw.id);
