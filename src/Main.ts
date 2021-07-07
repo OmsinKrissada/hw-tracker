@@ -148,7 +148,7 @@ bot.once('ready', async () => {
 		name: 'remove',
 		description: 'Deletes a task from global homework list.',
 		options: [{ type: 'INTEGER', description: 'Homework ID', name: 'id', required: true }],
-	}], '709824110229979278').then(() => logger.info('Command set.'));
+	}]).then(() => logger.info('Slash-commands registered.'));
 });
 
 bot.on('interactionCreate', async interaction => {
