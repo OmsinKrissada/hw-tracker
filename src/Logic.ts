@@ -58,6 +58,7 @@ export const list = async (interaction: ConsideringInteraction) => {
 				sameElse: 'DD/MM/YYYY [เวลา] HH:mm น.'
 			};
 		} else {
+			if (hw.dueDate.valueOf() != 0) hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 			format = {
 				sameDay: '[วันนี้]',
 				nextDay: '[พรุ่งนี้]',
