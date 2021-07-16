@@ -2,7 +2,7 @@ import { ButtonInteraction, Client, CommandInteraction, DMChannel, Guild, Intera
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
-import { condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
+import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
 import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
 import { announce_channel, autoDeleteJobs, prefix } from './Main';
@@ -47,8 +47,7 @@ export const list = async (interaction: ConsideringInteraction) => {
 		hw.dueDate = new Date(hw.dueDate);
 		hw.createdAt = new Date(hw.createdAt);
 		if (hw.dueTime) {
-			const [hours, mins] = hw.dueTime.split(':');
-			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
+			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
 			format = {
 				sameDay: '[วันนี้ เวลา] HH:mm น.',
 				nextDay: '[พรุ่งนี้ เวลา] HH:mm น.',
@@ -397,8 +396,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		const hw = await HomeworkRepository.findOne(id);
 		if (hw.dueDate) {
 			if (hw.dueTime) {
-				const [hours, mins] = hw.dueTime.split(':');
-				hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
+				hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
 			} else {
 				hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 			}
@@ -454,8 +452,7 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 		await HomeworkRepository.softDelete(hw.id);
 		logger.debug(`deleted ${id}`);
 		if (hw.dueTime) {
-			const [hours, mins] = hw.dueTime.split(':');
-			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
+			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
 		}
 		const format = hw.dueTime ? 'lll' : 'll';
 		editPrompt({

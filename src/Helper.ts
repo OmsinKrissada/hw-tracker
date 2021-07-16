@@ -225,3 +225,10 @@ export async function confirm_type<T extends Object>(title: string, list: T[], c
 		return result;
 	}
 }
+
+export function appendTime(date: Date, time: string) {
+	if (!time.match(/\d{1,2}:\d{1,2}/g)) throw (`Invalid time string format, provided ${time}`);
+	const [hours, mins] = time.split(':');
+	date.setHours(+hours, +mins);
+	return date;
+}

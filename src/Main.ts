@@ -8,6 +8,7 @@ import subjects from './subjects.json';
 import { connectDB, HomeworkRepository } from './DBManager';
 import { logger } from './Logger';
 import { IsNull, Not } from 'typeorm';
+import { appendTime } from './Helper';
 
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
@@ -111,8 +112,7 @@ bot.once('ready', async () => {
 	hws.forEach(hw => {
 		hw.dueDate = new Date(hw.dueDate);
 		if (hw.dueTime) {
-			const [hours, mins] = hw.dueTime.split(':');
-			hw.dueDate = new Date(hw.dueDate.valueOf() + (+hours * 3600000) + (+mins * 60000));
+			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
 		} else {
 			hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 		}
@@ -148,7 +148,7 @@ bot.once('ready', async () => {
 		name: 'remove',
 		description: 'Deletes a task from global homework list.',
 		options: [{ type: 'INTEGER', description: 'Homework ID', name: 'id', required: true }],
-	}]).then(() => logger.info('Slash-commands registered.'));
+	}], CONFIG.dev_mode ? CONFIG.guildId : undefined).then(() => logger.info('Slash-commands registered.'));
 });
 
 bot.on('interactionCreate', async interaction => {
@@ -159,7 +159,7 @@ bot.on('interactionCreate', async interaction => {
 
 	if (interaction.isCommand()) {
 		// console.log(interaction);
-		switch (interaction.command.name) {
+		switch (interaction.commandName) {
 			case 'hw': {
 				interaction.reply({
 					embeds: [{

@@ -43,6 +43,7 @@ interface ConfigOption {
 		aqua: number;
 		pink: number;
 	};
+	dev_mode: boolean;
 }
 
 // const validator = new YamlValidator({
