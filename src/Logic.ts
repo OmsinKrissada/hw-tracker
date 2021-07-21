@@ -1,14 +1,14 @@
-import { ButtonInteraction, Client, CommandInteraction, DMChannel, Guild, Interaction, InteractionUpdateOptions, Message, MessageComponentInteraction, MessageEmbed, MessagePayload, MessageReaction, NewsChannel, PartialDMChannel, TextChannel, ThreadChannel, User, WebhookEditMessageOptions } from 'discord.js';
+import { ButtonInteraction, Client, CommandInteraction, DMChannel, Guild, Interaction, InteractionUpdateOptions, Message, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, MessagePayload, MessageReaction, NewsChannel, PartialDMChannel, TextChannel, ThreadChannel, User, WebhookEditMessageOptions } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
 import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
-import CONFIG from './ConfigManager';
 import subjects from './subjects.json';
 import { announce_channel, autoDeleteJobs, prefix } from './Main';
 import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
+import ConfigManager from './ConfigManager';
 
 async function getSubjectFromName(partialName: string, caller: User, channel: TextChannel) {
 	let matched: typeof subjects = [];
@@ -30,16 +30,29 @@ async function getSubjectFromName(partialName: string, caller: User, channel: Te
 
 type ConsideringInteraction = CommandInteraction | ButtonInteraction;
 
-export const list = async (interaction: ConsideringInteraction) => {
+export const list = async (interaction: ConsideringInteraction, showID = false) => {
 	const { channel } = interaction;
 	if (!channel.isText()) return;
 
-	const hws: Homework[] = await HomeworkRepository
-		.createQueryBuilder()
-		.select('*')
-		.addOrderBy('-dueDate', 'DESC')
-		.addOrderBy('-dueTime', 'DESC')
-		.getRawMany();
+	let hws: Homework[];
+	try {
+		hws = await HomeworkRepository
+			.createQueryBuilder()
+			.select('*')
+			.addOrderBy('-dueDate', 'DESC')
+			.addOrderBy('-dueTime', 'DESC')
+			.getRawMany();
+	} catch (err) {
+		const embed: MessageEmbedOptions = {
+			description: `**Cannot read from database**:\n${err}`,
+			color: ConfigManager.color.red
+		};
+		if (interaction.isCommand())
+			interaction.reply({ embeds: [embed] });
+		else (<Message>interaction.message).edit({ embeds: [embed] });
+		return;
+	}
+
 	let i = 0;
 	const condensed = condenseArrayByLengthLimit(hws.map(hw => {
 		i++;
@@ -76,19 +89,30 @@ export const list = async (interaction: ConsideringInteraction) => {
 			return '📗';
 		};
 		return `**-------------------------------------------**\n` +
-			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}** | \`${hw.id}\`\n\n` +
+			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}**${showID ? ` | \`${hw.id}\`` : ''}\n\n` +
 			`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
 			`${hw.detail ? `**\nDetail**: ${hw.detail}` : ''} ` +
-			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ‼` : ''}`;
+			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ⏰` : ''}`;
 	}), 1024);
-	const pages = condensed.map(c => { return { embeds: [{ title: '📚 Homework List', color: CONFIG.color.blue, description: c }], fetchReply: true }; });
+	const pages = condensed.map(c => { return { embeds: [{ title: '📚 Homework List', description: c }] }; });
 
 	if (interaction.isCommand()) {
-		const prompt = await interaction.reply({ embeds: [{ title: '<a:loading:845534883396583435>' }], fetchReply: true }) as Message;
+		const prompt = await interaction.reply({
+			embeds: pages[0].embeds, components: [{
+				type: 'ACTION_ROW',
+				components: [{
+					type: 'BUTTON',
+					label: 'Loading ...',
+					style: 'SECONDARY',
+					customId: 'thisshouldntbeused',
+					disabled: true
+				}]
+			}], fetchReply: true
+		}) as Message;
 		sendPage({ textChannel: channel, pages: pages, appendPageNumber: true, preMessage: prompt });
 	} else if (interaction.message instanceof Message) {
-		const prompt = await interaction.message.edit({ embeds: [{ title: '<a:loading:845534883396583435>' }], components: [] });
-		sendPage({ textChannel: channel, pages: pages, appendPageNumber: true, preMessage: prompt });
+		// const prompt = await interaction.message.edit({ embeds: [{ title: '<a:loading:845534883396583435>' }], components: [] });
+		sendPage({ textChannel: channel, pages: pages, appendPageNumber: true, preMessage: interaction.message });
 	}
 };
 
@@ -112,7 +136,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 			embeds: [{
 				title: 'Homework Creation Session',
 				description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
-				color: CONFIG.color.pink
+				color: ConfigManager.color.pink
 			}], components: [{
 				type: 'ACTION_ROW',
 				components: [{
@@ -130,7 +154,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 			embeds: [{
 				title: 'Homework Creation Session',
 				description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
-				color: CONFIG.color.pink
+				color: ConfigManager.color.pink
 			}], components: [{
 				type: 'ACTION_ROW',
 				components: [{
@@ -161,7 +185,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		embeds: [{
 			title: 'Homework Creation Session',
 			description: `**หัวข้อการบ้าน**: "${title}"\n-----------------------------------\nกรุณาใส่ __ชื่อวิชา__ ลงในแชท`,
-			color: CONFIG.color.pink
+			color: ConfigManager.color.pink
 		}], components: [{
 			type: 1,
 			components: [{
@@ -185,7 +209,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 				embeds: [{
 					title: 'Homework Creation Session',
 					description: `**ขออภัย, ไม่พบวิชา "${subject_name}"**\nกรุณาเช็คการสะกดคำหรือดูชื่อวิชาจากตารางสอน`,
-					color: CONFIG.color.yellow
+					color: ConfigManager.color.yellow
 				}]
 			});
 			await channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(_innerm => {
@@ -205,7 +229,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		embeds: [{
 			title: 'Homework Creation Session',
 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})" \n---------------------------------------------------\nกรุณาใส่ __ข้อมูลเพิ่มเติม__ ลงในแชท (กดข้ามได้)`,
-			color: CONFIG.color.pink
+			color: ConfigManager.color.pink
 		}],
 		components: [{
 			type: 1,
@@ -247,7 +271,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		embeds: [{
 			title: 'Homework Creation Session',
 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail} \n---------------------------------------------------\nกรุณาใส่ __วันส่ง__ ลงในแชท (กดข้ามได้)\nรูปแบบคือ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
-			color: CONFIG.color.pink
+			color: ConfigManager.color.pink
 		}],
 		components: [{
 			type: 1,
@@ -285,7 +309,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 				embeds: [{
 					title: 'Homework Creation Session',
 					description: `รูปแบบวันไม่ถูกต้อง กรุณาใส่วันในรูปแบบ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
-					color: CONFIG.color.yellow
+					color: ConfigManager.color.yellow
 				}]
 			});
 			await channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(innerCollected => {
@@ -316,7 +340,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 			embeds: [{
 				title: 'Homework Creation Session',
 				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Due Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __เวลาส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
-				color: CONFIG.color.pink
+				color: ConfigManager.color.pink
 			}],
 			components: [{
 				type: 1,
@@ -354,7 +378,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 					embeds: [{
 						title: 'Homework Creation Session',
 						description: `รูปแบบเวลาไม่ถูกต้อง กรุณาใส่วันในรูปแบบ hh:mm เช่น \`18:00\``,
-						color: CONFIG.color.yellow
+						color: ConfigManager.color.yellow
 					}]
 				});
 				await channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1, time: 300000 }).then(innerCollected => {
@@ -388,7 +412,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 			embeds: [{
 				title: '<:checkmark:849685283459825714> Creation Successful',
 				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('ll')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
-				color: CONFIG.color.green
+				color: ConfigManager.color.green
 			}],
 			components: []
 		});
@@ -407,7 +431,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 					embeds: [{
 						title: 'Auto-deleted due to hitting deadline.',
 						description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
-						color: CONFIG.color.yellow
+						color: ConfigManager.color.yellow
 					}]
 				});
 			});
@@ -419,7 +443,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	refmsg.edit(new MessageEmbed({
 		title: 'Homework Creation Session',
 		description: `หัวข้อการบ้าน: "${title}"\nวิชา:"${sub.name} (${sub.subID})"\nข้อมูลเพิ่มเติม:"${description}" \n\n**กรุณาใส่ __วันส่ง__ ลงในแชท**`,
-		color: CONFIG.color.blue
+		color: ConfigManager.color.blue
 	}))
 	await channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1 }).then(_m => {
 		const m = _m.first();
@@ -443,7 +467,7 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 			embeds: [{
 				title: 'Not Found',
 				description: `Cannot find homework with ID: \`${id}\``,
-				color: CONFIG.color.red
+				color: ConfigManager.color.red
 			}],
 			components: []
 		});
@@ -459,7 +483,7 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 			embeds: [{
 				title: '🗑️ Homework Deleted',
 				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
-				color: CONFIG.color.green
+				color: ConfigManager.color.green
 			}],
 			components: []
 		});

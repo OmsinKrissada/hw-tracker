@@ -141,12 +141,16 @@ bot.once('ready', async () => {
 		description: 'Lists all homework.',
 	},
 	{
+		name: 'listid',
+		description: 'Lists all homework with their ID'
+	},
+	{
 		name: 'add',
 		description: 'Adds a task to global homework list.',
 	},
 	{
 		name: 'remove',
-		description: 'Deletes a task from global homework list.',
+		description: 'Deletes a task from global homework list. (Find ID from "/listid" command)',
 		options: [{ type: 'INTEGER', description: 'Homework ID', name: 'id', required: true }],
 	}], CONFIG.dev_mode ? CONFIG.guildId : undefined).then(() => logger.info('Slash-commands registered.'));
 });
@@ -198,14 +202,33 @@ bot.on('interactionCreate', async interaction => {
 				break;
 			}
 			case 'list': {
+				logger.debug('listing from command');
 				Tracker.list(interaction);
 				break;
 			}
+			case 'listid':
+				Tracker.list(interaction, true);
+				break;
 			case 'add': {
 				Tracker.add(interaction);
 				break;
 			}
 			case 'remove': {
+				// interaction.reply({
+				// 	embeds: [{
+				// 		description: 'Testing new awesome feature'
+				// 	}],
+				// 	components: [{
+				// 		type: 'ACTION_ROW',
+				// 		components: [{
+				// 			type: 'SELECT_MENU',
+				// 			placeholder: 'Choose homework to delete',
+				// 			options: [{ label: 'Label', value: 'Value', default: false, description: 'description', emoji: '🎓' }],
+				// 			customId: 'customId'
+				// 		}]
+				// 	}]
+				// });
+				// break;
 				const id = interaction.options.get('id').value as number;
 				Tracker.remove(interaction, id);
 				break;
@@ -215,12 +238,11 @@ bot.on('interactionCreate', async interaction => {
 
 	if (interaction.isButton()) {
 		if (interaction.customId.startsWith('hw')) {
-			// if (channel.messages.resolve(interaction.message.id).deletable) channel.messages.resolve(interaction.message.id).delete();
 			switch (interaction.customId) {
 				case 'hw_list':
-					logger.debug('listing from interaction');
+					logger.debug('listing from button');
+					await Tracker.list(interaction);
 					interaction.deferUpdate();
-					Tracker.list(interaction);
 					break;
 				case 'hw_add':
 					interaction.deferUpdate();
@@ -228,7 +250,7 @@ bot.on('interactionCreate', async interaction => {
 					break;
 				case 'hw_remove':
 					interaction.update({
-						embeds: [{ title: 'Please enter homework ID to delete.', description: '(ID คือเลขหลังชื่อการบ้านในในคำสั่ง list)' }],
+						embeds: [{ title: 'Please enter homework ID to delete.', description: '(ID คือเลขหลังชื่อการบ้านในในคำสั่ง \`/listid\`)' }],
 						components: [{
 							type: 'ACTION_ROW',
 							components: [{
