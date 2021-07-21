@@ -16,7 +16,7 @@
 		"js-yaml": "^3.14.1",
 		"moment": "^2.29.1",
 		"moment-timezone": "^0.5.33",
-		"mysql": "^2.18.1",
+		"mysql2": "^2.2.5",
 		"n-readlines": "^1.0.1",
 		"node-schedule": "^2.0.0",
 		"pg": "^8.6.0",
