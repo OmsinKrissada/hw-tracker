@@ -17,7 +17,7 @@ interface ConfigOption {
 	prefix: string;
 	subscriber_role: `${bigint}`;
 	source_link: string;
-	database: 'mysql' | 'sqlite';
+	database: 'mysql' | 'sqlite' | 'postgres';
 	mysql: {
 		dbname: string;
 		hostname: string;

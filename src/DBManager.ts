@@ -1,7 +1,7 @@
 import { Connection, createConnection, getConnection, Repository } from "typeorm";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
-import { Homework } from "./models/Homework";
+import { Homework_MySQL, Homework_Default, Homework } from "./models/Homework";
 
 export let HomeworkRepository: Repository<Homework> = null;
 
@@ -18,12 +18,12 @@ async function connectMySQL() {
 			"password": ConfigManager.mysql.password,
 			"database": ConfigManager.mysql.dbname,
 			"synchronize": true,
-			"logging": false,
+			"logging": true,
 			"charset": "utf8mb4",
-			"entities": [Homework],
+			"entities": [Homework_MySQL],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
-		HomeworkRepository = DBConnection.getRepository(Homework);
+		HomeworkRepository = DBConnection.getRepository(Homework_MySQL);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');
@@ -41,10 +41,10 @@ async function connectSQLite() {
 			"database": ConfigManager.sqlite.dbpath,
 			"synchronize": true,
 			"logging": false,
-			"entities": [Homework],
+			"entities": [Homework_Default],
 		});
 		logger.info(`Successfully connected to ${name} database.`);
-		HomeworkRepository = DBConnection.getRepository(Homework);
+		HomeworkRepository = DBConnection.getRepository(Homework_Default);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} database: ` + err.message);
 		logger.error('Exiting . . .');
@@ -66,10 +66,10 @@ async function connectPostgreSQL() {
 			"database": ConfigManager.postgres.dbname,
 			"synchronize": true,
 			"logging": false,
-			"entities": [Homework],
+			"entities": [Homework_Default],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
-		HomeworkRepository = DBConnection.getRepository(Homework);
+		HomeworkRepository = DBConnection.getRepository(Homework_Default);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');
