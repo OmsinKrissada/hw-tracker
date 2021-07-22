@@ -9,6 +9,7 @@ import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
 import ConfigManager from './ConfigManager';
+import { SelectQueryBuilder } from 'typeorm';
 
 async function getSubjectFromName(partialName: string, caller: User, channel: TextChannel) {
 	let matched: typeof subjects = [];
@@ -30,18 +31,22 @@ async function getSubjectFromName(partialName: string, caller: User, channel: Te
 
 type ConsideringInteraction = CommandInteraction | ButtonInteraction;
 
-export const list = async (interaction: ConsideringInteraction, showID = false) => {
+export const list = async (interaction: ConsideringInteraction, options?: { showID?: boolean, showDeleted?: boolean; }) => {
+	const showID = options?.showID ?? false;
+	const showDeleted = options?.showDeleted ?? false;
+
 	const { channel } = interaction;
 	if (!channel.isText()) return;
 
 	let hws: Homework[];
 	try {
-		hws = await HomeworkRepository
+		let builder: SelectQueryBuilder<Homework> = HomeworkRepository
 			.createQueryBuilder()
 			.select('*')
 			.addOrderBy('-dueDate', 'DESC')
-			.addOrderBy('-dueTime', 'DESC')
-			.getRawMany();
+			.addOrderBy('-dueTime', 'DESC');
+		if (showDeleted) builder.withDeleted();
+		hws = await builder.getRawMany();
 	} catch (err) {
 		const embed: MessageEmbedOptions = {
 			description: `**Cannot read from database**:\n${err}`,

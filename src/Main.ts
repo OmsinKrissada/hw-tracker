@@ -121,7 +121,7 @@ bot.once('ready', async () => {
 			logger.debug(`Auto-deleted ${hw.id}`);
 			announce_channel.send({
 				embeds: [{
-					title: 'Auto-deleted due to hitting deadline.',
+					title: 'หมดเวลาส่งงานสำหรับ',
 					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 					color: CONFIG.color.yellow
 				}]
@@ -142,7 +142,11 @@ bot.once('ready', async () => {
 	},
 	{
 		name: 'listid',
-		description: 'Lists all homework with their ID'
+		description: 'Lists all homework with their ID.'
+	},
+	{
+		name: 'listall',
+		description: 'Lists all homework including auto deleted ones.'
 	},
 	{
 		name: 'add',
@@ -207,7 +211,10 @@ bot.on('interactionCreate', async interaction => {
 				break;
 			}
 			case 'listid':
-				Tracker.list(interaction, true);
+				Tracker.list(interaction, { showID: true });
+				break;
+			case 'listall':
+				Tracker.list(interaction, { showID: true, showDeleted: true });
 				break;
 			case 'add': {
 				Tracker.add(interaction);
@@ -304,7 +311,9 @@ bot.on('interactionCreate', async interaction => {
 
 			}
 		}
-		logger.debug(interaction.customId);
+		// logger.debug(interaction.customId);
+	} else if (interaction.isSelectMenu()) {
+		// console.debug(interaction);
 	}
 });
 

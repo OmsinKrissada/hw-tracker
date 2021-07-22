@@ -1,4 +1,4 @@
-import { TextChannel, MessageEmbed, MessageReaction, User, Message, MessageActionRowComponentResolvable, MessageComponent, MessageComponentInteraction, DMChannel, NewsChannel, ThreadChannel, MessageEmbedOptions, MessageOptions, MessagePayload } from "discord.js";
+import { TextChannel, MessageEmbed, MessageReaction, User, Message, MessageActionRowComponentResolvable, MessageComponent, MessageComponentInteraction, DMChannel, NewsChannel, ThreadChannel, MessageEmbedOptions, MessageOptions, MessagePayload, SelectMenuInteraction } from "discord.js";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 
@@ -111,30 +111,60 @@ export async function sendPage(options: { textChannel: TextChannel | DMChannel |
 			if (current_page < pages.length) current_page = pages.length;
 		}
 		else if (customID === 'page_choose') {
-			await interaction.reply({
+			// interaction.defer();
+			let page_num = 1;
+			const reply = await interaction.reply({
 				embeds: [{
 					author: {
-						name: 'Type page number in chat >>>',
+						name: 'Choose a page to navigate.',
 						iconURL: user.displayAvatarURL()
 					}
-				}]
-			});
-			await message.channel.awaitMessages({ filter: (responsemsg: Message) => responsemsg.author.id == user.id, max: 1, time: 60000 }).then(msg => {
-				const text = msg.first().content;
-				if (!isNaN(+text) && +text >= 1 && +text <= pages.length) {
-					current_page = +text;
-				} else {
-					msg.first().reply('Unknown page').then(unknownmsg => {
-						setTimeout(() => {
-							unknownmsg.delete();
-						}, 5000);
-					});
-				}
-				message.channel.messages.delete(msg.first());
-				interaction.deleteReply();
-			}).catch(() => {
-				interaction.deleteReply();
-			});
+				}],
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'SELECT_MENU',
+						placeholder: 'Pick a page',
+						customId: JSON.stringify({ type: 'CHOOSE_PAGE', allowedUserId: interaction.user.id, controlMessageId: interaction.message.id }),
+						options: pages.map(() => { return { label: `Page ${page_num}`, value: `${page_num++}` }; })
+					}]
+				}],
+				fetchReply: true
+			}) as Message;
+
+			let selection: SelectMenuInteraction;
+			try {
+				selection = await reply.awaitMessageComponent({
+					componentType: 'SELECT_MENU', time: 30000, // wait for 5 mins max
+					filter: i => {
+						const obj = JSON.parse(i.customId);
+						return obj.allowedUserId === i.user.id && obj.controlMessageId === interaction.message.id;
+					},
+				}) as SelectMenuInteraction;
+				reply.delete();
+			} catch (err) {
+				reply.delete();
+				return;
+			}
+			current_page = +selection.values[0];
+
+			selection.deferUpdate();
+			// await message.channel.awaitMessages({ filter: (responsemsg: Message) => responsemsg.author.id == user.id, max: 1, time: 60000 }).then(msg => {
+			// 	const text = msg.first().content;
+			// 	if (!isNaN(+text) && +text >= 1 && +text <= pages.length) {
+			// 		current_page = +text;
+			// 	} else {
+			// 		msg.first().reply('Unknown page').then(unknownmsg => {
+			// 			setTimeout(() => {
+			// 				unknownmsg.delete();
+			// 			}, 5000);
+			// 		});
+			// 	}
+			// 	message.channel.messages.delete(msg.first());
+			// 	interaction.deleteReply();
+			// }).catch(() => {
+			// 	interaction.deleteReply();
+			// });
 		}
 
 		const previous_index = page_components.findIndex(c => c.customId == 'page_previous');
