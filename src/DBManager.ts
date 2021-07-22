@@ -18,7 +18,7 @@ async function connectMySQL() {
 			"password": ConfigManager.mysql.password,
 			"database": ConfigManager.mysql.dbname,
 			"synchronize": true,
-			"logging": true,
+			"logging": false,
 			"charset": "utf8mb4",
 			"entities": [Homework_MySQL],
 		});
