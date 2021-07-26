@@ -3,7 +3,7 @@ import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
 import * as Tracker from './Logic';
-import CONFIG from './ConfigManager';
+import ConfigManager from './ConfigManager';
 import subjects from './subjects.json';
 import { connectDB, HomeworkRepository } from './DBManager';
 import { logger } from './Logger';
@@ -53,7 +53,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	announce_channel.send({
-		content: `<@&${CONFIG.subscriber_role}>`,
+		content: `<@&${ConfigManager.subscriber_role}>`,
 		embeds: [embed]
 	}).then(msg => {
 		setTimeout(() => {
@@ -85,8 +85,8 @@ bot.once('ready', async () => {
 
 	bot.user.setPresence({ activities: [{ name: `/hw`, type: 'LISTENING' }] });
 
-	announce_guild = await bot.guilds.fetch(CONFIG.guildId);
-	announce_channel = announce_guild.channels.resolve(CONFIG.channelId) as TextChannel;
+	announce_guild = await bot.guilds.fetch(ConfigManager.guildId);
+	announce_channel = announce_guild.channels.resolve(ConfigManager.channelId) as TextChannel;
 
 	// Register class start notification from subject.json
 	logger.info('Registering class schedule ...');
@@ -96,9 +96,11 @@ bot.once('ready', async () => {
 			const length = l ? +l : 1;
 			const [hour, min] = periods_begin[period].split(':');
 			schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
+				if (ConfigManager.pause_announce) return;
 				announce(subject, period, length);
 			});
 			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
+				if (ConfigManager.pause_announce) return;
 				announce_upcoming(subject);
 			});
 		});
@@ -123,7 +125,7 @@ bot.once('ready', async () => {
 				embeds: [{
 					title: 'หมดเวลาส่งงานสำหรับ',
 					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
-					color: CONFIG.color.yellow
+					color: ConfigManager.color.yellow
 				}]
 			});
 		});
@@ -156,7 +158,7 @@ bot.once('ready', async () => {
 		name: 'remove',
 		description: 'Deletes a task from global homework list. (Find ID from "/listid" command)',
 		options: [{ type: 'INTEGER', description: 'Homework ID', name: 'id', required: true }],
-	}], CONFIG.dev_mode ? CONFIG.guildId : undefined).then(() => logger.info('Slash-commands registered.'));
+	}], ConfigManager.dev_mode ? ConfigManager.guildId : undefined).then(() => logger.info('Slash-commands registered.'));
 });
 
 bot.on('interactionCreate', async interaction => {
@@ -179,7 +181,7 @@ bot.on('interactionCreate', async interaction => {
 							`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
 							`Also available using \`/list\`, \`/add\` or \`/remove\`!\n\n` +
 							`[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
-						color: CONFIG.color.blue,
+						color: ConfigManager.color.blue,
 					}],
 					components: [{
 						type: 'ACTION_ROW',
@@ -279,7 +281,7 @@ bot.on('interactionCreate', async interaction => {
 									embeds: [{
 										title: 'Invalid',
 										description: `Invalid homework ID: \`${content}\``,
-										color: CONFIG.color.red
+										color: ConfigManager.color.red
 									}],
 									components: []
 								});
@@ -290,8 +292,8 @@ bot.on('interactionCreate', async interaction => {
 							(interaction.message as Message).edit({
 								embeds: [{
 									title: 'Please provide homework ID',
-									description: `Usage: \`${prefix}remove ID\`\nEx: \`${prefix}remove 10\``,
-									color: CONFIG.color.red
+									description: `Usage: \`/remove ID\`\nEx: \`/remove 10\``,
+									color: ConfigManager.color.red
 								}],
 								components: []
 							});
@@ -318,63 +320,10 @@ bot.on('interactionCreate', async interaction => {
 });
 
 
-
-export const prefix = CONFIG.prefix;
-bot.on('messageCreate', async msg => {
-	if (msg.author.bot) return;
-	const [command, ...args] = msg.content.split(' ');
-	const channel = msg.channel;
-	const user = msg.author;
-
-
-	switch (command.toLowerCase()) {
-		case `${prefix}`: {
-			channel.send('Please use `/hw` instead, thank you. :)');
-			break;
-		}
-		case `my${prefix}`: {
-			channel.send({
-				content: 'Homework Menu (THIS DOESN\'T WORK YET!!!) >>',
-				// embed: {
-				// 	title: 'Homework Menu',
-				// 	description: `**กดปุ่มด้านล่าง**\nหรือใช้คำสั่งต่อไปนี้:\n\n\`${prefix}list\`\n\`${prefix}add\`\n\`${prefix}remove ID\``,
-				// 	color: CONFIG.color.blue,
-				// },
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						label: 'List my unfinished tasks',
-						style: 'PRIMARY',
-						customId: 'myhw_list',
-					},
-					{
-						type: 'BUTTON',
-						label: 'Mark a task as done',
-						emoji: { id: '849685283459825714', name: 'checked' },
-						style: 'SECONDARY',
-						customId: 'myhw_add'
-					},
-					{
-						type: 'BUTTON',
-						label: 'Mark a task as undone',
-						emoji: { id: '849697672884650065', name: 'unchecked' },
-						style: 'SECONDARY',
-						customId: 'myhw_remove'
-					}]
-				}]
-			});
-			break;
-		}
-	}
-
-});
-
-
 export const autoDeleteJobs = new Map<number, schedule.Job>();
 
 connectDB().then(() => {
-	bot.login(CONFIG.token).then(() => {
+	bot.login(ConfigManager.token).then(() => {
 		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`);
 	});
 });

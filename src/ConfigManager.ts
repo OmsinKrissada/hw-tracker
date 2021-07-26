@@ -14,7 +14,6 @@ interface ConfigOption {
 	token: string;
 	guildId: `${bigint}`;
 	channelId: `${bigint}`;
-	prefix: string;
 	subscriber_role: `${bigint}`;
 	source_link: string;
 	database: 'mysql' | 'sqlite' | 'postgres';
@@ -43,6 +42,7 @@ interface ConfigOption {
 		aqua: number;
 		pink: number;
 	};
+	pause_announce: boolean;
 	dev_mode: boolean;
 }
 
