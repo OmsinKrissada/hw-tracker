@@ -1,4 +1,4 @@
-import { TextChannel, MessageEmbed, MessageReaction, User, Message, MessageActionRowComponentResolvable, MessageComponent, MessageComponentInteraction, DMChannel, NewsChannel, ThreadChannel, MessageEmbedOptions, MessageOptions, MessagePayload, SelectMenuInteraction } from "discord.js";
+import { TextChannel, MessageEmbed, User, Message, MessageActionRowComponentResolvable, DMChannel, NewsChannel, ThreadChannel, MessageOptions, SelectMenuInteraction } from "discord.js";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 

@@ -1,4 +1,4 @@
-import { Connection, createConnection, getConnection, Repository } from "typeorm";
+import { Connection, createConnection, Repository } from "typeorm";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 import { Homework_MySQL, Homework_Default, Homework } from "./models/Homework";

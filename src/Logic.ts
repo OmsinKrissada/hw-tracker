@@ -1,10 +1,10 @@
-import { ButtonInteraction, Client, CommandInteraction, DMChannel, Guild, Interaction, InteractionUpdateOptions, Message, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, MessagePayload, MessageReaction, NewsChannel, PartialDMChannel, TextChannel, ThreadChannel, User, WebhookEditMessageOptions } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, InteractionUpdateOptions, Message, MessageEmbedOptions, MessagePayload, TextChannel, User, WebhookEditMessageOptions } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
 import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
 import subjects from './subjects.json';
-import { announce_channel, autoDeleteJobs, prefix } from './Main';
+import { announce_channel, autoDeleteJobs } from './Main';
 import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
