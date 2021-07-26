@@ -89,23 +89,23 @@ bot.once('ready', async () => {
 	announce_channel = announce_guild.channels.resolve(ConfigManager.channelId) as TextChannel;
 
 	// Register class start notification from subject.json
-	logger.info('Registering class schedule ...');
-	subjects.forEach(subject => {
-		subject.classes.forEach(c => {
-			const [DoW, period, l] = c.split(' ');
-			const length = l ? +l : 1;
-			const [hour, min] = periods_begin[period].split(':');
-			schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
-				if (ConfigManager.pause_announce) return;
-				announce(subject, period, length);
-			});
-			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
-				if (ConfigManager.pause_announce) return;
-				announce_upcoming(subject);
+	if (!ConfigManager.pause_announce) {
+		logger.info('Registering class schedule ...');
+		subjects.forEach(subject => {
+			subject.classes.forEach(c => {
+				const [DoW, period, l] = c.split(' ');
+				const length = l ? +l : 1;
+				const [hour, min] = periods_begin[period].split(':');
+				schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
+					announce(subject, period, length);
+				});
+				schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
+					announce_upcoming(subject);
+				});
 			});
 		});
-	});
-	logger.info('Class schedule registered.');
+		logger.info('Class schedule registered.');
+	}
 
 	// Register class schedule with given due dates
 	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
