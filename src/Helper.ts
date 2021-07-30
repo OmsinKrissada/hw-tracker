@@ -1,4 +1,4 @@
-import { TextChannel, MessageEmbed, User, Message, MessageActionRowComponentResolvable, DMChannel, NewsChannel, ThreadChannel, MessageOptions, SelectMenuInteraction, MessageActionRowOptions, MessageSelectMenu } from "discord.js";
+import { TextChannel, MessageEmbed, User, Message, MessageActionRowComponentResolvable, DMChannel, NewsChannel, ThreadChannel, MessageOptions, SelectMenuInteraction } from "discord.js";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 
@@ -44,83 +44,48 @@ export async function sendPage(options: { textChannel: TextChannel | DMChannel |
 	}
 
 	let current_page = 1;
-	const page_component_rows: MessageActionRowOptions[] = [];
-	const page_buttons: MessageActionRowComponentResolvable[] = [];
+	const page_components: MessageActionRowComponentResolvable[] = [];
 
 	if (pages.length > 1) {
-		if (pages.length > 2) page_buttons.push({
+		if (pages.length > 2) page_components.push({
 			type: 2,
 			style: 2,
 			label: '◀ First',
 			customId: 'page_first',
-			disabled: false
+			disabled: true
 		});
-		page_buttons.push({
+		page_components.push({
 			type: 2,
 			style: 2,
 			label: '◀',
 			customId: 'page_previous',
-			disabled: false
+			disabled: true
 		});
-		page_buttons.push({
+		page_components.push({
 			type: 2,
 			style: 2,
 			label: '▶',
 			// emoji: { name: 'join_arrow', id: '845520716715917314' },
-			customId: 'page_next',
-			disabled: false
+			customId: 'page_next'
 		});
-		if (pages.length > 2) page_buttons.push({
+		if (pages.length > 2) page_components.push({
 			type: 2,
 			style: 2,
 			label: 'Last ▶',
-			customId: 'page_last',
-			disabled: false
+			customId: 'page_last'
+		});
+		if (pages.length > 4) page_components.push({
+			type: 2,
+			style: 2,
+			label: '📝 Custom page',
+			customId: 'page_choose'
 		});
 	}
 
-	// construct components for every pages
-	const previous_index = page_buttons.findIndex(c => c.customId == 'page_previous');
-	const first_index = page_buttons.findIndex(c => c.customId == 'page_first');
-	const next_index = page_buttons.findIndex(c => c.customId == 'page_next');
-	const last_index = page_buttons.findIndex(c => c.customId == 'page_last');
-
-	let scanning_page = 1;
-	let ran = false;
-	pages.map(page => {
-		if (ran) return;
-		console.log(page_buttons);
-		const this_page_buttons = page_buttons.map(b => { return b; });
-		if (scanning_page === 1) {
-			if (previous_index != -1) this_page_buttons[previous_index].disabled = true;
-			if (first_index != -1) this_page_buttons[first_index].disabled = true;
-		} else if (scanning_page === pages.length) {
-			if (next_index != -1) this_page_buttons[next_index].disabled = true;
-			if (last_index != -1) this_page_buttons[last_index].disabled = true;
-		}
-		ran = true;
-		console.log(this_page_buttons);
-		console.log(page_buttons);
-		let processing_page = 1;
-		page.components = [
-			{
-				type: 'ACTION_ROW',
-				components: this_page_buttons
-			},
-			{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
-					placeholder: 'Or... pick a page.',
-					options: pages.map(() => { return { label: `Page ${processing_page}`, value: `${processing_page}`, default: scanning_page === processing_page++ }; }),
-					customId: 'page_choose',
-				}]
-			}
-		];
-
-		scanning_page++;
-	});
-
+	pages[0].components = page_components.length > 1 ? [{
+		type: 1,
+		components: page_components
+	}] : [];
 	let message: Message;
 	if (preMessage) {
 		message = preMessage;
@@ -146,18 +111,86 @@ export async function sendPage(options: { textChannel: TextChannel | DMChannel |
 			if (current_page < pages.length) current_page = pages.length;
 		}
 		else if (customID === 'page_choose') {
-			if (!interaction.isSelectMenu()) {
-				logger.warn('Unexpected customId \'page_choose\' on non selection menu');
+			// interaction.defer();
+			let page_num = 1;
+			const reply = await interaction.reply({
+				embeds: [{
+					author: {
+						name: 'Choose a page to navigate.',
+						iconURL: user.displayAvatarURL()
+					}
+				}],
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'SELECT_MENU',
+						placeholder: 'Pick a page',
+						customId: JSON.stringify({ type: 'CHOOSE_PAGE', allowedUserId: interaction.user.id, controlMessageId: interaction.message.id }),
+						options: pages.map(() => { return { label: `Page ${page_num}`, value: `${page_num++}` }; })
+					}]
+				}],
+				fetchReply: true
+			}) as Message;
+
+			let selection: SelectMenuInteraction;
+			try {
+				selection = await reply.awaitMessageComponent({
+					componentType: 'SELECT_MENU', time: 30000, // wait for 5 mins max
+					filter: i => {
+						const obj = JSON.parse(i.customId);
+						return obj.allowedUserId === i.user.id && obj.controlMessageId === interaction.message.id;
+					},
+				}) as SelectMenuInteraction;
+				reply.delete();
+			} catch (err) {
+				reply.delete();
 				return;
 			}
-			if (current_page === +interaction.values[0]) { interaction.deferUpdate(); return; }
-			current_page = +interaction.values[0];
+			current_page = +selection.values[0];
+
+			selection.deferUpdate();
+			// await message.channel.awaitMessages({ filter: (responsemsg: Message) => responsemsg.author.id == user.id, max: 1, time: 60000 }).then(msg => {
+			// 	const text = msg.first().content;
+			// 	if (!isNaN(+text) && +text >= 1 && +text <= pages.length) {
+			// 		current_page = +text;
+			// 	} else {
+			// 		msg.first().reply('Unknown page').then(unknownmsg => {
+			// 			setTimeout(() => {
+			// 				unknownmsg.delete();
+			// 			}, 5000);
+			// 		});
+			// 	}
+			// 	message.channel.messages.delete(msg.first());
+			// 	interaction.deleteReply();
+			// }).catch(() => {
+			// 	interaction.deleteReply();
+			// });
 		}
 
-
-
-		// (<MessageSelectMenu>pages[current_page - 1].components[1].components[0]).options[current_page - 1].default = true; // prevents from choosing the current page
-		console.log((<MessageSelectMenu>pages[current_page - 1].components[1].components[0]));
+		const previous_index = page_components.findIndex(c => c.customId == 'page_previous');
+		const first_index = page_components.findIndex(c => c.customId == 'page_first');
+		const next_index = page_components.findIndex(c => c.customId == 'page_next');
+		const last_index = page_components.findIndex(c => c.customId == 'page_last');
+		if (current_page == 1) {
+			if (previous_index != -1) page_components[previous_index].disabled = true;
+			if (first_index != -1) page_components[first_index].disabled = true;
+			if (next_index != -1) page_components[next_index].disabled = false;
+			if (last_index != -1) page_components[last_index].disabled = false;
+		} else if (current_page == pages.length) {
+			if (previous_index != -1) page_components[previous_index].disabled = false;
+			if (first_index != -1) page_components[first_index].disabled = false;
+			if (next_index != -1) page_components[next_index].disabled = true;
+			if (last_index != -1) page_components[last_index].disabled = true;
+		} else {
+			if (previous_index != -1) page_components[previous_index].disabled = false;
+			if (first_index != -1) page_components[first_index].disabled = false;
+			if (next_index != -1) page_components[next_index].disabled = false;
+			if (last_index != -1) page_components[last_index].disabled = false;
+		}
+		pages[current_page - 1].components = page_components.length > 1 ? [{
+			type: 1,
+			components: page_components
+		}] : [];
 		message.edit(pages[current_page - 1]);
 		if (!interaction?.deferred && !interaction?.replied) interaction.deferUpdate();
 	});
