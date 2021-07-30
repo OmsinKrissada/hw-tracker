@@ -20,10 +20,10 @@ async function connectMySQL() {
 			"synchronize": true,
 			"logging": false,
 			"charset": "utf8mb4",
-			"entities": [Homework_MySQL],
+			"entities": [Homework_Default],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
-		HomeworkRepository = DBConnection.getRepository(Homework_MySQL);
+		HomeworkRepository = DBConnection.getRepository(Homework_Default);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');
