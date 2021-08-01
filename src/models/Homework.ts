@@ -18,7 +18,7 @@ export class Homework_Default {
 	@Column({ nullable: true })
 	dueDate: Date;
 
-	@Column({ nullable: true })
+	@Column({ nullable: true, length: 5 })
 	dueTime: string;
 
 	@Column({ length: 18 })
