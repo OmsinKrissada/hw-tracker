@@ -9,6 +9,7 @@ import { connectDB, HomeworkRepository } from './DBManager';
 import { logger } from './Logger';
 import { IsNull, Not } from 'typeorm';
 import { appendTime } from './Helper';
+import { Homework } from './models/Homework';
 
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
@@ -73,6 +74,50 @@ async function announce_upcoming(subject: typeof subjects[0]) {
 	});
 }
 
+export function scheduleDeleteJobs(hw: Homework) {
+	hw.dueDate = new Date(hw.dueDate);
+	if (hw.dueTime) {
+		hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
+	} else {
+		hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
+	}
+
+	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
+		logger.debug(`Remind 1 hour ${hw.id}`);
+		announce_channel.send({
+			embeds: [{
+				title: 'REMINDER! - 1 HOUR LEFT For',
+				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				color: ConfigManager.color.yellow
+			}]
+		});
+	});
+	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
+		logger.debug(`Remind 5 mins ${hw.id}`);
+		announce_channel.send({
+			embeds: [{
+				title: 'REMINDER! - 5 MINS LEFT For',
+				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				color: ConfigManager.color.yellow
+			}]
+		});
+	});
+	const deleteJob = schedule.scheduleJob(hw.dueDate, () => {
+		HomeworkRepository.softDelete(hw.id);
+		logger.debug(`Auto-deleted ${hw.id}`);
+		announce_channel.send({
+			embeds: [{
+				title: '⚠ DEADLINE HIT',
+				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				color: ConfigManager.color.yellow
+			}]
+		});
+	});
+
+	remind1hJobs.set(hw.id, remind1hJob);
+	remind5mJobs.set(hw.id, remind5mJob);
+	deleteJobs.set(hw.id, deleteJob);
+}
 
 
 
@@ -112,24 +157,7 @@ bot.once('ready', async () => {
 	logger.info('Registering auto-delete task(s) ...');
 	let adtCount = 0; // adt = auto-delete task
 	hws.forEach(hw => {
-		hw.dueDate = new Date(hw.dueDate);
-		if (hw.dueTime) {
-			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
-		} else {
-			hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
-		}
-		const job = schedule.scheduleJob(hw.dueDate, () => {
-			HomeworkRepository.softDelete(hw.id);
-			logger.debug(`Auto-deleted ${hw.id}`);
-			announce_channel.send({
-				embeds: [{
-					title: 'DEADLINE HIT',
-					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
-					color: ConfigManager.color.yellow
-				}]
-			});
-		});
-		autoDeleteJobs.set(hw.id, job);
+		scheduleDeleteJobs(hw);
 		adtCount++;
 	});
 	logger.info(`${adtCount} Auto-delete task(s) registered.`);
@@ -320,7 +348,9 @@ bot.on('interactionCreate', async interaction => {
 });
 
 
-export const autoDeleteJobs = new Map<number, schedule.Job>();
+export const deleteJobs = new Map<number, schedule.Job>();
+export const remind1hJobs = new Map<number, schedule.Job>();
+export const remind5mJobs = new Map<number, schedule.Job>();
 
 connectDB().then(() => {
 	bot.login(ConfigManager.token).then(() => {

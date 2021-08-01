@@ -4,7 +4,7 @@ import moment from 'moment-timezone';
 
 import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
 import subjects from './subjects.json';
-import { announce_channel, autoDeleteJobs } from './Main';
+import { announce_channel, deleteJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs } from './Main';
 import { HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
@@ -67,12 +67,12 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		if (hw.dueTime) {
 			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
 			format = {
-				sameDay: '[Today at] HH.mm',
-				nextDay: '[Tomorrow at] HH.mm',
-				nextWeek: 'dddd [at] HH.mm',
-				lastDay: '[Yesterday at] HH.mm',
-				lastWeek: '[Last] dddd [at] HH.mm',
-				sameElse: 'DD/MM/YYYY [at] HH.mm'
+				sameDay: '[Today at] H.mm',
+				nextDay: '[Tomorrow at] H.mm',
+				nextWeek: 'dddd [at] H.mm',
+				lastDay: '[Yesterday at] H.mm',
+				lastWeek: '[Last] dddd [at] H.mm',
+				sameElse: 'DD/MM/YYYY [at] H.mm'
 			};
 		} else {
 			if (hw.dueDate.valueOf() != 0) hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
@@ -189,7 +189,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	editPrompt({
 		embeds: [{
 			title: 'Homework Creation Session',
-			description: `**หัวข้อการบ้าน**: "${title}"\n-----------------------------------\nกรุณาใส่ __ชื่อวิชา__ ลงในแชท`,
+			description: `**หัวข้อการบ้าน**: "${title}"\n-----------------------------------\nพิมพ์ __ชื่อวิชา__ ลงในแชท`,
 			color: ConfigManager.color.pink
 		}], components: [{
 			type: 1,
@@ -233,7 +233,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	editPrompt({
 		embeds: [{
 			title: 'Homework Creation Session',
-			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})" \n---------------------------------------------------\nกรุณาใส่ __ข้อมูลเพิ่มเติม__ ลงในแชท (กดข้ามได้)`,
+			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})" \n---------------------------------------------------\nพิมพ์ __ข้อมูลเพิ่มเติม__ ลงในแชท (กดข้ามได้)`,
 			color: ConfigManager.color.pink
 		}],
 		components: [{
@@ -275,7 +275,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	editPrompt({
 		embeds: [{
 			title: 'Homework Creation Session',
-			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail} \n---------------------------------------------------\nกรุณาใส่ __วันส่ง__ ลงในแชท (กดข้ามได้)\nรูปแบบคือ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
+			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail} \n---------------------------------------------------\nพิมพ์ __วันส่ง__ ลงในแชท (กดข้ามได้)\nรูปแบบคือ วัน/เดือน/ปีค.ศ. Ex. \`12/6/2021\``,
 			color: ConfigManager.color.pink
 		}],
 		components: [{
@@ -344,7 +344,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		editPrompt({
 			embeds: [{
 				title: 'Homework Creation Session',
-				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Due Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __เวลาส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
+				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __เวลาส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
 				color: ConfigManager.color.pink
 			}],
 			components: [{
@@ -416,32 +416,14 @@ export const add = async (interaction: ConsideringInteraction) => {
 		editPrompt({
 			embeds: [{
 				title: '<:checkmark:849685283459825714> Creation Successful',
-				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**:"${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('ll')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
+				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('LL')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
 				color: ConfigManager.color.green
 			}],
 			components: []
 		});
 		const id = result.identifiers[0].id;
 		const hw = await HomeworkRepository.findOne(id);
-		if (hw.dueDate) {
-			if (hw.dueTime) {
-				hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
-			} else {
-				hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
-			}
-			const job = schedule.scheduleJob(hw.dueDate, () => {
-				HomeworkRepository.softDelete(hw.id);
-				logger.debug(`Auto-deleted ${hw.id}`);
-				announce_channel.send({
-					embeds: [{
-						title: 'Auto-deleted due to hitting deadline.',
-						description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
-						color: ConfigManager.color.yellow
-					}]
-				});
-			});
-			autoDeleteJobs.set(hw.id, job);
-		}
+		scheduleDeleteJobs(hw);
 	});
 
 	/*
@@ -492,9 +474,13 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 			}],
 			components: []
 		});
-		if (autoDeleteJobs.has(hw.id)) {
-			autoDeleteJobs.get(hw.id).cancel();
-			autoDeleteJobs.delete(hw.id);
+		if (deleteJobs.has(hw.id)) {
+			deleteJobs.get(hw.id).cancel();
+			remind1hJobs.get(hw.id).cancel();
+			remind5mJobs.get(hw.id).cancel();
+			deleteJobs.delete(hw.id);
+			remind1hJobs.delete(hw.id);
+			remind5mJobs.delete(hw.id);
 		}
 
 	};
