@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, InteractionUpdateOptions, Message, MessageEmbedOptions, MessagePayload, TextChannel, User, WebhookEditMessageOptions } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, InteractionUpdateOptions, Message, MessageEmbedOptions, MessageOptions, MessagePayload, TextChannel, User, WebhookEditMessageOptions } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
@@ -67,21 +67,21 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		if (hw.dueTime) {
 			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
 			format = {
-				sameDay: '[วันนี้ เวลา] HH:mm น.',
-				nextDay: '[พรุ่งนี้ เวลา] HH:mm น.',
-				nextWeek: 'dddd[นี้ เวลา] HH:mm น.',
-				lastDay: '[เมื่อวานนี้ เวลา] HH:mm น.',
-				lastWeek: 'dddd[ที่แล้ว เวลา] HH:mm น.',
-				sameElse: 'DD/MM/YYYY [เวลา] HH:mm น.'
+				sameDay: '[Today at] HH.mm',
+				nextDay: '[Tomorrow at] HH.mm',
+				nextWeek: 'dddd [at] HH.mm',
+				lastDay: '[Yesterday at] HH.mm',
+				lastWeek: '[Last] dddd [at] HH.mm',
+				sameElse: 'DD/MM/YYYY [at] HH.mm'
 			};
 		} else {
 			if (hw.dueDate.valueOf() != 0) hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 			format = {
-				sameDay: '[วันนี้]',
-				nextDay: '[พรุ่งนี้]',
-				nextWeek: 'dddd[นี้]',
-				lastDay: '[เมื่อวานนี้]',
-				lastWeek: 'dddd[ที่แล้ว]',
+				sameDay: '[Today]',
+				nextDay: '[Tomorrow]',
+				nextWeek: 'dddd',
+				lastDay: '[Yesterday]',
+				lastWeek: '[Last] dddd',
 				sameElse: 'DD/MM/YYYY'
 			};
 		}
@@ -93,13 +93,13 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 			if (diff_ms < 259200000) return '📙'; // less than 3 days
 			return '📗';
 		};
-		return `**-------------------------------------------**\n` +
+		return `-------------------------------------------\n` +
 			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}**${showID ? ` | \`${hw.id}\`` : ''}\n\n` +
 			`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
 			`${hw.detail ? `**\nDetail**: ${hw.detail}` : ''} ` +
-			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `**\n\nDue**: ${moment(hw.dueDate).calendar(format)} ⏰` : ''}`;
-	}), 1024);
-	const pages = condensed.map(c => { return { embeds: [{ title: '📚 Homework List', description: c }] }; });
+			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `\n\n**Due**: __${moment(hw.dueDate).calendar(format)}__ **(${moment(hw.dueDate).fromNow(true)})** ⏰` : ''}`;
+	}), 1050);
+	const pages = condensed.map((c): MessageOptions => { return { embeds: [{ title: '📚 Homework List', description: c }] }; });
 
 	if (interaction.isCommand()) {
 		const prompt = await interaction.reply({

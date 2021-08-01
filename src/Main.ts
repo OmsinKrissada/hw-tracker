@@ -35,7 +35,7 @@ const periods_end: { [key: string]: string; } = {
 	'7': '15:40'
 };
 
-moment.locale('th');
+moment.locale('en');
 moment.tz.setDefault('Asia/Bangkok');
 
 
@@ -123,8 +123,8 @@ bot.once('ready', async () => {
 			logger.debug(`Auto-deleted ${hw.id}`);
 			announce_channel.send({
 				embeds: [{
-					title: 'หมดเวลาส่งงานสำหรับ',
-					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
+					title: 'DEADLINE HIT',
+					description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'lll' : 'll')} ‼` : ''}`,
 					color: ConfigManager.color.yellow
 				}]
 			});
