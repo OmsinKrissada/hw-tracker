@@ -11,39 +11,40 @@ import yaml from 'js-yaml';
 
 
 interface ConfigOption {
-	token: string;
-	guildId: `${bigint}`;
-	channelId: `${bigint}`;
-	subscriber_role: `${bigint}`;
-	source_link: string;
-	database: 'mysql' | 'sqlite' | 'postgres';
-	mysql: {
-		dbname: string;
-		hostname: string;
-		port: number;
-		username: string;
-		password: string;
+	readonly token: string;
+	readonly guildId: `${bigint}`;
+	readonly channelId: `${bigint}`;
+	readonly subscriber_role: `${bigint}`;
+	readonly source_link: string;
+	readonly database: 'mysql' | 'sqlite' | 'postgres';
+	readonly mysql: {
+		readonly dbname: string;
+		readonly hostname: string;
+		readonly port: number;
+		readonly username: string;
+		readonly password: string;
 	};
-	postgres: {
-		dbname: string;
-		hostname: string;
-		port: number;
-		username: string;
-		password: string;
+	readonly postgres: {
+		readonly dbname: string;
+		readonly hostname: string;
+		readonly port: number;
+		readonly username: string;
+		readonly password: string;
 	};
-	sqlite: {
-		dbpath: string;
+	readonly sqlite: {
+		readonly dbpath: string;
 	};
-	color: {
-		red: number;
-		blue: number;
-		green: number;
-		yellow: number;
-		aqua: number;
-		pink: number;
+	readonly color: {
+		readonly red: number;
+		readonly blue: number;
+		readonly green: number;
+		readonly yellow: number;
+		readonly light_yellow: number;
+		readonly aqua: number;
+		readonly pink: number;
 	};
-	pause_announce: boolean;
-	dev_mode: boolean;
+	readonly pause_announce: boolean;
+	readonly dev_mode: boolean;
 }
 
 // const validator = new YamlValidator({

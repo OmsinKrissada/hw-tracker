@@ -88,9 +88,11 @@ export function scheduleDeleteJobs(hw: Homework) {
 			embeds: [{
 				title: 'REMINDER! - 1 HOUR LEFT For',
 				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
-				color: ConfigManager.color.yellow
+				color: ConfigManager.color.light_yellow
 			}]
-		});
+		}).then(msg => setTimeout(() => {
+			if (!msg.deleted && msg.deletable) msg.delete();
+		}, 60 * 60 * 1000));
 	});
 	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
 		logger.debug(`Remind 5 mins ${hw.id}`);
@@ -98,9 +100,11 @@ export function scheduleDeleteJobs(hw: Homework) {
 			embeds: [{
 				title: 'REMINDER! - 5 MINS LEFT For',
 				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
-				color: ConfigManager.color.yellow
+				color: ConfigManager.color.light_yellow
 			}]
-		});
+		}).then(msg => setTimeout(() => {
+			if (!msg.deleted && msg.deletable) msg.delete();
+		}, 5 * 60 * 1000));
 	});
 	const deleteJob = schedule.scheduleJob(hw.dueDate, () => {
 		HomeworkRepository.softDelete(hw.id);
@@ -114,9 +118,9 @@ export function scheduleDeleteJobs(hw: Homework) {
 		});
 	});
 
-	remind1hJobs.set(hw.id, remind1hJob);
-	remind5mJobs.set(hw.id, remind5mJob);
-	deleteJobs.set(hw.id, deleteJob);
+	if (remind1hJob) remind1hJobs.set(hw.id, remind1hJob);
+	if (remind5mJob) remind5mJobs.set(hw.id, remind5mJob);
+	if (deleteJob) deleteJobs.set(hw.id, deleteJob);
 }
 
 
@@ -155,12 +159,10 @@ bot.once('ready', async () => {
 	// Register class schedule with given due dates
 	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
 	logger.info('Registering auto-delete task(s) ...');
-	let adtCount = 0; // adt = auto-delete task
 	hws.forEach(hw => {
 		scheduleDeleteJobs(hw);
-		adtCount++;
 	});
-	logger.info(`${adtCount} Auto-delete task(s) registered.`);
+	logger.info(`${deleteJobs.size} Auto-delete task(s) registered.`);
 
 	bot.application.commands.set([{
 		name: 'hw',
@@ -365,3 +367,35 @@ function gracefulExit(signal: NodeJS.Signals) {
 	logger.info('Successfully destroyed the bot instance.');
 	process.exit();
 }
+
+import('readline').then(readline => {
+	const read = readline.createInterface({
+		input: process.stdin,
+		// output: process.stdout,
+		prompt: '> '
+	});
+	read.prompt(true);
+
+	read.on('line', async input => {
+		switch (input) {
+			case 'reload':
+				deleteJobs.forEach(j => j.cancel());
+				remind1hJobs.forEach(j => j.cancel());
+				remind5mJobs.forEach(j => j.cancel());
+				deleteJobs.clear();
+				remind1hJobs.clear();
+				remind5mJobs.clear();
+				// Register class schedule with given due dates
+				const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
+				logger.info('Registering auto-delete task(s) ...');
+				hws.forEach(hw => {
+					scheduleDeleteJobs(hw);
+				});
+				logger.info(`${deleteJobs.size} Auto-delete task(s) registered.`);
+				break;
+			default:
+				console.log('Unknown command.');
+		}
+		read.prompt();
+	});
+});
