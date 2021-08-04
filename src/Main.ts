@@ -405,9 +405,11 @@ import('readline').then(readline => {
 			case 'reload':
 				deleteJobs.forEach(j => j.cancel());
 				remind1hJobs.forEach(j => j.cancel());
+				remind10mJobs.forEach(j => j.cancel());
 				remind5mJobs.forEach(j => j.cancel());
 				deleteJobs.clear();
 				remind1hJobs.clear();
+				remind10mJobs.clear();
 				remind5mJobs.clear();
 				// Register class schedule with given due dates
 				const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
