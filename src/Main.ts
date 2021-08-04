@@ -85,21 +85,36 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
 		logger.debug(`Remind 1 hour ${hw.id}`);
 		announce_channel.send({
+			content: `<@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
-				title: 'REMINDER! - 1 HOUR LEFT For',
-				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				title: 'REMINDER! - __1 HOUR LEFT__ For',
+				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
 				color: ConfigManager.color.light_yellow
 			}]
 		}).then(msg => setTimeout(() => {
 			if (!msg.deleted && msg.deletable) msg.delete();
 		}, 60 * 60 * 1000));
 	});
+	const remind10mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(10, 'm').toDate(), () => {
+		logger.debug(`Remind 10 mins ${hw.id}`);
+		announce_channel.send({
+			content: `<@&${ConfigManager.subscriber_role}>`,
+			embeds: [{
+				title: 'REMINDER! - __10 MINS LEFT__ For',
+				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				color: ConfigManager.color.light_yellow
+			}]
+		}).then(msg => setTimeout(() => {
+			if (!msg.deleted && msg.deletable) msg.delete();
+		}, 10 * 60 * 1000));
+	});
 	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
 		logger.debug(`Remind 5 mins ${hw.id}`);
 		announce_channel.send({
+			content: `<@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
-				title: 'REMINDER! - 5 MINS LEFT For',
-				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				title: 'REMINDER! - __5 MINS LEFT__ For',
+				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
 				color: ConfigManager.color.light_yellow
 			}]
 		}).then(msg => setTimeout(() => {
@@ -110,9 +125,10 @@ export function scheduleDeleteJobs(hw: Homework) {
 		HomeworkRepository.softDelete(hw.id);
 		logger.debug(`Auto-deleted ${hw.id}`);
 		announce_channel.send({
+			content: `<@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: '⚠ DEADLINE HIT',
-				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
 				color: ConfigManager.color.yellow
 			}]
 		});
@@ -120,6 +136,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 
 	if (remind1hJob) remind1hJobs.set(hw.id, remind1hJob);
 	if (remind5mJob) remind5mJobs.set(hw.id, remind5mJob);
+	if (remind10mJob) remind10mJobs.set(hw.id, remind10mJob);
 	if (deleteJob) deleteJobs.set(hw.id, deleteJob);
 }
 
@@ -352,6 +369,7 @@ bot.on('interactionCreate', async interaction => {
 
 export const deleteJobs = new Map<number, schedule.Job>();
 export const remind1hJobs = new Map<number, schedule.Job>();
+export const remind10mJobs = new Map<number, schedule.Job>();
 export const remind5mJobs = new Map<number, schedule.Job>();
 
 connectDB().then(() => {
