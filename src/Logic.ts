@@ -95,8 +95,8 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		};
 		return `-------------------------------------------\n` +
 			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.name}**${showID ? ` | \`${hw.id}\`` : ''}\n\n` +
-			`${hw.detail ? `**Detail**: ${hw.detail}\n` : ''} ` +
-			`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
+			` ${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}` +
+			` **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
 			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `\n\n**Due**: __${moment(hw.dueDate).calendar(format)}__ **(${moment(hw.dueDate).fromNow(true)})** ⏰` : ''}`;
 	}), 1050);
 	const pages = condensed.map((c): MessageOptions => { return { embeds: [{ title: '📚 Homework List', description: c }] }; });

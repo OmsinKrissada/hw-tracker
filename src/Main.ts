@@ -47,14 +47,13 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 
 
 	const embed = new MessageEmbed({
-		author: { name: 'Class started!' },
 		title: `${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
 		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} น. - ${periods_end[+period + length - 1]} น.)\n\n${link}`,
-		color: Math.floor(Math.random() * (16777215 - 0 + 1)),
+		color: ConfigManager.color.aqua,
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	announce_channel.send({
-		content: `<@&${ConfigManager.subscriber_role}>`,
+		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.subscriber_role}>`,
 		embeds: [embed]
 	}).then(msg => {
 		setTimeout(() => {
@@ -85,7 +84,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
 		logger.debug(`Remind 1 hour ${hw.id}`);
 		announce_channel.send({
-			content: `<@&${ConfigManager.subscriber_role}>`,
+			content: `1 hour left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 HOUR LEFT__ For',
 				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
@@ -98,7 +97,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind10mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(10, 'm').toDate(), () => {
 		logger.debug(`Remind 10 mins ${hw.id}`);
 		announce_channel.send({
-			content: `<@&${ConfigManager.subscriber_role}>`,
+			content: `10 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __10 MINS LEFT__ For',
 				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
@@ -111,7 +110,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
 		logger.debug(`Remind 5 mins ${hw.id}`);
 		announce_channel.send({
-			content: `<@&${ConfigManager.subscriber_role}>`,
+			content: `5 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __5 MINS LEFT__ For',
 				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
@@ -125,7 +124,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		HomeworkRepository.softDelete(hw.id);
 		logger.debug(`Auto-deleted ${hw.id}`);
 		announce_channel.send({
-			content: `<@&${ConfigManager.subscriber_role}>`,
+			content: `Time's up! <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: '⚠ DEADLINE HIT',
 				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
@@ -218,7 +217,7 @@ bot.on('interactionCreate', async interaction => {
 		// console.log(interaction);
 		if (interaction.channel instanceof DMChannel) return; // Not supporting DM yet
 		if (!interaction.guild.me.permissionsIn(interaction.channel).has('VIEW_CHANNEL')) {
-			interaction.reply({ content: 'I do not have `VIEW_CHANNEL` permission on this channel! Please try using other channels or contact a server admin.', ephemeral: true });
+			interaction.reply({ content: 'I do not have `VIEW_CHANNEL` permission on this channel! Please try using other channels or contacting a server admin.', ephemeral: true });
 			logger.warn('Detected command usage on a channel without `VIEW_CHANNEL` permission.');
 			return;
 		}

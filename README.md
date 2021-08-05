@@ -39,6 +39,7 @@ color:
     green: 0x04CF8D
     blue: 0x28BAD4
     yellow: 0xebc934
+    light_yellow: 0xffffbf
     aqua: 0x34ebbd
     pink: 0xed37f0
 
