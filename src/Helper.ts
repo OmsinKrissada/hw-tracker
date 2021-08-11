@@ -1,4 +1,4 @@
-import { TextChannel, MessageEmbed, User, Message, MessageActionRowComponentResolvable, DMChannel, NewsChannel, ThreadChannel, MessageOptions, SelectMenuInteraction } from "discord.js";
+import { TextChannel, MessageEmbed, User, Message, MessageActionRowComponentResolvable, DMChannel, NewsChannel, ThreadChannel, MessageOptions, SelectMenuInteraction, TextBasedChannels, MessageActionRowComponentOptions, MessageButtonOptions } from "discord.js";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 
@@ -27,7 +27,7 @@ export function condenseArrayByLengthLimit(list: string[], limit: number, separa
 }
 
 
-export async function sendPage(options: { textChannel: TextChannel | DMChannel | NewsChannel | ThreadChannel, pages?: MessageOptions[], appendPageNumber?: boolean, preMessage?: Message; }) {
+export async function sendPage(options: { textChannel: TextBasedChannels, pages?: MessageOptions[], appendPageNumber?: boolean, preMessage?: Message; }) {
 	const { textChannel, pages, appendPageNumber, preMessage } = options;
 
 	// if (value.length == 0) value.push('*Empty*');
@@ -44,7 +44,7 @@ export async function sendPage(options: { textChannel: TextChannel | DMChannel |
 	}
 
 	let current_page = 1;
-	const page_components: MessageActionRowComponentResolvable[] = [];
+	const page_components: MessageButtonOptions[] = [];
 
 	if (pages.length > 1) {
 		if (pages.length > 2) page_components.push({
@@ -83,7 +83,7 @@ export async function sendPage(options: { textChannel: TextChannel | DMChannel |
 	}
 
 	pages[0].components = page_components.length > 1 ? [{
-		type: 1,
+		type: 'ACTION_ROW',
 		components: page_components
 	}] : [];
 	let message: Message;
@@ -167,10 +167,10 @@ export async function sendPage(options: { textChannel: TextChannel | DMChannel |
 			// });
 		}
 
-		const previous_index = page_components.findIndex(c => c.customId == 'page_previous');
-		const first_index = page_components.findIndex(c => c.customId == 'page_first');
-		const next_index = page_components.findIndex(c => c.customId == 'page_next');
-		const last_index = page_components.findIndex(c => c.customId == 'page_last');
+		const previous_index = page_components.findIndex((c: any) => c.customId == 'page_previous');
+		const first_index = page_components.findIndex((c: any) => c.customId == 'page_first');
+		const next_index = page_components.findIndex((c: any) => c.customId == 'page_next');
+		const last_index = page_components.findIndex((c: any) => c.customId == 'page_last');
 		if (current_page == 1) {
 			if (previous_index != -1) page_components[previous_index].disabled = true;
 			if (first_index != -1) page_components[first_index].disabled = true;

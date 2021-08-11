@@ -12,7 +12,7 @@
 	"author": "",
 	"license": "MIT",
 	"dependencies": {
-		"discord.js": "^13.0.0-dev.1e90be8.1626825831",
+		"discord.js": "^13.0.1",
 		"js-yaml": "^3.14.1",
 		"moment": "^2.29.1",
 		"moment-timezone": "^0.5.33",
@@ -20,11 +20,10 @@
 		"n-readlines": "^1.0.1",
 		"node-schedule": "^2.0.0",
 		"pg": "^8.6.0",
-		"sqlite3": "^5.0.2",
+		"sqlite3": "^4.2.0",
 		"typeorm": "^0.2.32",
 		"typescript": "^4.3.2",
-		"winston": "^3.3.3",
-		"yaml-validator": "^3.0.1"
+		"winston": "^3.3.3"
 	},
 	"devDependencies": {
 		"@types/js-yaml": "^3.12.6",

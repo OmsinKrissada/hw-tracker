@@ -1,4 +1,4 @@
-import { Client, DMChannel, Guild, Message, MessageEmbed, TextChannel } from 'discord.js';
+import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, TextChannel } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
@@ -216,7 +216,7 @@ bot.on('interactionCreate', async interaction => {
 	if (interaction.isCommand()) {
 		// console.log(interaction);
 		if (interaction.channel instanceof DMChannel) return; // Not supporting DM yet
-		if (!interaction.guild.me.permissionsIn(interaction.channel).has('VIEW_CHANNEL')) {
+		if (!interaction.guild.me.permissionsIn(<GuildChannelResolvable>interaction.channel).has('VIEW_CHANNEL')) {
 			interaction.reply({ content: 'I do not have `VIEW_CHANNEL` permission on this channel! Please try using other channels or contacting a server admin.', ephemeral: true });
 			logger.warn('Detected command usage on a channel without `VIEW_CHANNEL` permission.');
 			return;
