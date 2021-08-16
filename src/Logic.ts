@@ -54,8 +54,28 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		};
 		if (interaction.isCommand())
 			interaction.reply({ embeds: [embed] });
-		else (<Message>interaction.message).edit({ embeds: [embed] });
+		else (<Message>interaction.message).edit({ embeds: [embed], components: [] });
 		return;
+	}
+
+	// Case there's no homework
+	if (hws.length == 0) {
+		if (interaction.isCommand()) {
+			interaction.reply({
+				embeds: [{
+					title: '📚 Homework List',
+					description: 'The list is empty!'
+				}]
+			});
+		} else if (interaction.message instanceof Message) {
+			interaction.message.edit({
+				embeds: [{
+					title: '📚 Homework List',
+					description: 'The list is empty!'
+				}],
+				components: []
+			});
+		}
 	}
 
 	let i = 0;
