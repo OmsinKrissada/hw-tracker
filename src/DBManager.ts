@@ -2,8 +2,10 @@ import { Connection, createConnection, Repository } from "typeorm";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 import { Homework_MySQL, Homework_Default, Homework } from "./models/Homework";
+import { GuildData } from "./models/GuildData";
 
 export let HomeworkRepository: Repository<Homework> = null;
+export let GuildDataRepository: Repository<GuildData> = null;
 
 async function connectMySQL() {
 	const name = 'MySQL';
@@ -20,10 +22,12 @@ async function connectMySQL() {
 			"synchronize": true,
 			"logging": false,
 			"charset": "utf8mb4",
-			"entities": [Homework_Default],
+			"entities": [Homework_Default, GuildData],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
 		HomeworkRepository = DBConnection.getRepository(Homework_Default);
+		GuildDataRepository = DBConnection.getRepository(GuildData);
+
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');
@@ -41,10 +45,11 @@ async function connectSQLite() {
 			"database": ConfigManager.sqlite.dbpath,
 			"synchronize": true,
 			"logging": false,
-			"entities": [Homework_Default],
+			"entities": [Homework_Default, GuildData],
 		});
 		logger.info(`Successfully connected to ${name} database.`);
 		HomeworkRepository = DBConnection.getRepository(Homework_Default);
+		GuildDataRepository = DBConnection.getRepository(GuildData);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} database: ` + err.message);
 		logger.error('Exiting . . .');
@@ -66,10 +71,11 @@ async function connectPostgreSQL() {
 			"database": ConfigManager.postgres.dbname,
 			"synchronize": true,
 			"logging": false,
-			"entities": [Homework_Default],
+			"entities": [Homework_Default, GuildData],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
 		HomeworkRepository = DBConnection.getRepository(Homework_Default);
+		GuildDataRepository = DBConnection.getRepository(GuildData);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');

@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
 import subjects from './subjects.json';
 import { announce_channel, deleteJobs, remind10mJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs } from './Main';
-import { HomeworkRepository } from './DBManager';
+import { GuildDataRepository, HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
 import ConfigManager from './ConfigManager';
@@ -38,11 +38,14 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 	const { channel } = interaction;
 	if (!channel.isText()) return;
 
+	const useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
+	const whereClause = (useLocal ? `${interaction.guild.id}` : `GLOBAL`);
 	let hws: Homework[];
 	try {
 		let builder: SelectQueryBuilder<Homework> = HomeworkRepository
 			.createQueryBuilder()
 			.select('*')
+			.where({ guild: whereClause })
 			.addOrderBy('-dueDate', 'DESC')
 			.addOrderBy('-dueTime', 'DESC');
 		if (showDeleted) builder.withDeleted();
@@ -63,19 +66,20 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		if (interaction.isCommand()) {
 			interaction.reply({
 				embeds: [{
-					title: '📚 Homework List',
+					title: `📚 Homework List ${useLocal ? '(LOCAL MODE)' : ''}`,
 					description: 'The list is empty!'
 				}]
 			});
 		} else if (interaction.message instanceof Message) {
 			interaction.message.edit({
 				embeds: [{
-					title: '📚 Homework List',
+					title: `📚 Homework List ${useLocal ? '(LOCAL MODE)' : ''}`,
 					description: 'The list is empty!'
 				}],
 				components: []
 			});
 		}
+		return;
 	}
 
 	let i = 0;
@@ -119,7 +123,7 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 			` **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
 			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `\n\n**Due**: __${moment(hw.dueDate).calendar(format)}__ **(${moment(hw.dueDate).fromNow(true)})** ⏰` : ''}`;
 	}), 1050);
-	const pages = condensed.map((c): MessageOptions => { return { embeds: [{ title: '📚 Homework List', description: c }] }; });
+	const pages = condensed.map((c): MessageOptions => { return { embeds: [{ title: `📚 Homework List ${useLocal ? '(LOCAL MODE)' : ''}`, description: c }] }; });
 
 	if (interaction.isCommand()) {
 		const prompt = await interaction.reply({
@@ -147,7 +151,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 
 	let title: string, sub: typeof subjects[0], detail: string, dueDate: Date, dueTime: string;
 	let isCanceled = false;
-
+	const useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
 
 	const editPrompt = (options: (string | MessagePayload | WebhookEditMessageOptions) & (InteractionUpdateOptions & { fetchReply?: true; })) => {
 		if (interaction.isCommand()) { interaction.editReply(options); return; }
@@ -159,7 +163,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	if (interaction.isCommand()) {
 		prompt_msg = await interaction.reply({
 			embeds: [{
-				title: 'Homework Creation Session',
+				title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 				description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
 				color: ConfigManager.color.pink
 			}], components: [{
@@ -177,7 +181,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		prompt_msg = interaction.message as Message;
 		editPrompt({
 			embeds: [{
-				title: 'Homework Creation Session',
+				title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 				description: `กรุณาใส่ __หัวข้อการบ้าน__ ลงในแชท`,
 				color: ConfigManager.color.pink
 			}], components: [{
@@ -208,7 +212,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	if (isCanceled) return;
 	editPrompt({
 		embeds: [{
-			title: 'Homework Creation Session',
+			title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 			description: `**หัวข้อการบ้าน**: "${title}"\n-----------------------------------\nพิมพ์ __ชื่อวิชา__ ลงในแชท`,
 			color: ConfigManager.color.pink
 		}], components: [{
@@ -232,7 +236,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		while (!sub && !isCanceled) {
 			editPrompt({
 				embeds: [{
-					title: 'Homework Creation Session',
+					title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 					description: `**ขออภัย, ไม่พบวิชา "${subject_name}"**\nกรุณาเช็คการสะกดคำหรือดูชื่อวิชาจากตารางสอน`,
 					color: ConfigManager.color.yellow
 				}]
@@ -252,7 +256,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	if (isCanceled) return;
 	editPrompt({
 		embeds: [{
-			title: 'Homework Creation Session',
+			title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})" \n---------------------------------------------------\nพิมพ์ __ข้อมูลเพิ่มเติม__ ลงในแชท (กดข้ามได้)`,
 			color: ConfigManager.color.pink
 		}],
@@ -294,7 +298,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 	if (isCanceled) return;
 	editPrompt({
 		embeds: [{
-			title: 'Homework Creation Session',
+			title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail} \n---------------------------------------------------\nพิมพ์ __วันส่ง__ ลงในแชท (กดข้ามได้)\nรูปแบบคือ วัน/เดือน/ปีค.ศ. Ex. \`12/6/2021\``,
 			color: ConfigManager.color.pink
 		}],
@@ -332,7 +336,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 			if (received_date || isCanceled) return;
 			editPrompt({
 				embeds: [{
-					title: 'Homework Creation Session',
+					title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 					description: `รูปแบบวันไม่ถูกต้อง กรุณาใส่วันในรูปแบบ วัน/เดือน/ปีค.ศ. เช่น \`12/6/2021\``,
 					color: ConfigManager.color.yellow
 				}]
@@ -363,7 +367,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 		if (isCanceled) return;
 		editPrompt({
 			embeds: [{
-				title: 'Homework Creation Session',
+				title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n**Detail**: ${detail}\n**Date:**: ${moment(dueDate).format('ll')} \n---------------------------------------------------\nกรุณาใส่ __เวลาส่ง__ ลงในแชท (กดข้ามได้ ถ้าข้ามจะนับเป็นตอนจบวัน)\nรูปแบบคือ hh:mm เช่น \`18:00\``,
 				color: ConfigManager.color.pink
 			}],
@@ -401,7 +405,7 @@ export const add = async (interaction: ConsideringInteraction) => {
 				if (received_time || isCanceled) return;
 				editPrompt({
 					embeds: [{
-						title: 'Homework Creation Session',
+						title: `Homework Creation Session ${useLocal ? '(LOCAL MODE)' : ''}`,
 						description: `รูปแบบเวลาไม่ถูกต้อง กรุณาใส่วันในรูปแบบ hh:mm เช่น \`18:00\``,
 						color: ConfigManager.color.yellow
 					}]
@@ -432,18 +436,20 @@ export const add = async (interaction: ConsideringInteraction) => {
 
 	// Insert to database
 	if (isCanceled) return;
-	HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, dueDate: dueDate, dueTime: dueTime, author: user.id }).then(async result => {
+	HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, dueDate: dueDate, dueTime: dueTime, author: user.id, guild: useLocal ? interaction.guild.id : 'GLOBAL' }).then(async result => {
 		editPrompt({
 			embeds: [{
-				title: '<:checkmark:849685283459825714> Creation Successful',
+				title: `<:checkmark:849685283459825714> Creation Successful ${useLocal ? '(LOCAL MODE)' : ''}`,
 				description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('LL')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
 				color: ConfigManager.color.green
 			}],
 			components: []
 		});
 		const id = result.identifiers[0].id;
-		const hw = await HomeworkRepository.findOne(id);
-		scheduleDeleteJobs(hw);
+		if (!useLocal) {
+			const hw = await HomeworkRepository.findOne(id);
+			scheduleDeleteJobs(hw);
+		}
 	});
 
 	/*
@@ -464,22 +470,24 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 	const { channel } = interaction;
 	if (!channel.isText()) return;
 
+	const useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
+
 	const editPrompt = (options: (string | MessagePayload | WebhookEditMessageOptions) & (InteractionUpdateOptions & { fetchReply?: true; })) => {
 		if (interaction.isCommand()) interaction.reply(options);
 		else if (interaction.isButton()) (interaction.message as Message).edit(options);
 	};
 
-	if (await HomeworkRepository.count({ id: id }) < 1)
+	const hw = await HomeworkRepository.findOne({ id: id, guild: useLocal ? interaction.guild.id : 'GLOBAL' });
+	if (!hw)
 		editPrompt({
 			embeds: [{
-				title: 'Not Found',
+				title: `Not Found ${useLocal ? '(LOCAL MODE)' : ''}`,
 				description: `Cannot find homework with ID: \`${id}\``,
 				color: ConfigManager.color.red
 			}],
 			components: []
 		});
 	else {
-		const hw = await HomeworkRepository.findOne({ id: id });
 		await HomeworkRepository.softDelete(hw.id);
 		logger.debug(`deleted ${id}`);
 		if (hw.dueTime) {
@@ -488,7 +496,7 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 		const format = hw.dueTime ? 'lll' : 'll';
 		editPrompt({
 			embeds: [{
-				title: '🗑️ Homework Deleted',
+				title: `🗑️ Homework Deleted ${useLocal ? '(LOCAL MODE)' : ''}`,
 				description: `📋 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `**\nDetail**: ${hw.detail}` : ''}${hw.dueDate ? `**\n\nDue**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.green
 			}],

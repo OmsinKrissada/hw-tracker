@@ -24,6 +24,9 @@ export class Homework_Default {
 	@Column({ length: 18 })
 	author: string; // Discord user id
 
+	@Column({ length: 18, default: 'GLOBAL' })
+	guild: string | 'GLOBAL';
+
 	@CreateDateColumn()
 	createdAt: Date;
 

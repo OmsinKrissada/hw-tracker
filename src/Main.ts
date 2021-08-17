@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 import * as Tracker from './Logic';
 import ConfigManager from './ConfigManager';
 import subjects from './subjects.json';
-import { connectDB, HomeworkRepository } from './DBManager';
+import { connectDB, GuildDataRepository, HomeworkRepository } from './DBManager';
 import { logger } from './Logger';
 import { IsNull, Not } from 'typeorm';
 import { appendTime } from './Helper';
@@ -173,7 +173,7 @@ bot.once('ready', async () => {
 	}
 
 	// Register class schedule with given due dates
-	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
+	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()), guild: 'GLOBAL' } });
 	logger.info('Registering auto-delete task(s) ...');
 	hws.forEach(hw => {
 		scheduleDeleteJobs(hw);
@@ -204,6 +204,10 @@ bot.once('ready', async () => {
 		name: 'remove',
 		description: 'Deletes a task from global homework list. (Find ID from "/listid" command)',
 		options: [{ type: 'INTEGER', description: 'Homework ID', name: 'id', required: true }],
+	},
+	{
+		name: 'toggle',
+		description: 'Toggles between global and local(server-specific) list.',
 	}], ConfigManager.dev_mode ? ConfigManager.guildId : undefined).then(() => logger.info('Slash-commands registered.'));
 });
 
@@ -223,9 +227,10 @@ bot.on('interactionCreate', async interaction => {
 		}
 		switch (interaction.commandName) {
 			case 'hw': {
+				const useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
 				interaction.reply({
 					embeds: [{
-						title: 'Homework Menu',
+						title: `Homework Menu ${useLocal ? '(LOCAL MODE)' : ''}`,
 						description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n\n` +
 							`📕 <:join_arrow:845520716715917314> เหลืออีก 1 วัน\n` +
 							`📙 <:join_arrow:845520716715917314> เหลืออีก 3 วัน\n` +
@@ -239,7 +244,7 @@ bot.on('interactionCreate', async interaction => {
 						type: 'ACTION_ROW',
 						components: [{
 							type: 'BUTTON',
-							label: 'List homework',
+							label: '📚 List',
 							style: 'PRIMARY',
 							customId: 'hw_list'
 						},
@@ -292,6 +297,13 @@ bot.on('interactionCreate', async interaction => {
 				// break;
 				const id = interaction.options.get('id').value as number;
 				Tracker.remove(interaction, id);
+				break;
+			}
+			case 'toggle': {
+				let useLocal = (await GuildDataRepository.findOne(interaction.guild.id))?.useLocal;
+				GuildDataRepository.save({ id: interaction.guild.id, useLocal: !useLocal });
+				interaction.reply(`Changed homework source to: \`${!useLocal ? 'LOCAL' : 'GLOBAL'}\``);
+				logger.debug(`Guild<${interaction.guild.id}> Changed source mode to ${!useLocal ? 'LOCAL' : 'GLOBAL'}`);
 				break;
 			}
 		}
@@ -411,7 +423,7 @@ import('readline').then(readline => {
 				remind10mJobs.clear();
 				remind5mJobs.clear();
 				// Register class schedule with given due dates
-				const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()) } });
+				const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()), guild: 'GLOBAL' } });
 				logger.info('Registering auto-delete task(s) ...');
 				hws.forEach(hw => {
 					scheduleDeleteJobs(hw);
