@@ -231,13 +231,12 @@ bot.on('interactionCreate', async interaction => {
 				interaction.reply({
 					embeds: [{
 						title: `Homework Menu ${useLocal ? '(LOCAL MODE)' : ''}`,
-						description: `Thank you for using my Homework Tracker bot! 😄\nHere is the navigation menu. 👇\n\n` +
+						description: `Thank you for using my homework bot! 😄\nHere is the navigation menu. 👇\n\n` +
 							`📕 <:join_arrow:845520716715917314> เหลืออีก 1 วัน\n` +
 							`📙 <:join_arrow:845520716715917314> เหลืออีก 3 วัน\n` +
 							`📗 <:join_arrow:845520716715917314> เหลือมากกว่า 3 วัน\n` +
 							`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
-							`Also available using \`/list\`, \`/add\` or \`/remove\`!\n\n` +
-							`[Web version (BETA)](https://omsinkrissada.sytes.net/homework)\n[Source code](https://github.com/OmsinKrissada/hw-tracker)`,
+							`Try \`/list\`, \`/add\` or \`/remove\`!\n\n`,
 						color: ConfigManager.color.blue,
 					}],
 					components: [{
@@ -260,6 +259,23 @@ bot.on('interactionCreate', async interaction => {
 							style: 'SECONDARY',
 							customId: 'hw_remove'
 						}]
+					}, {
+						type: 'ACTION_ROW',
+						components: [
+							{
+								type: 'BUTTON',
+								label: 'Google Data Studio',
+								emoji: '<:gds:880037684427509770>',
+								style: 'LINK',
+								url: 'https://omsinkrissada.github.io/hw-tracker/'
+							},
+							{
+								type: 'BUTTON',
+								label: 'GitHub',
+								emoji: '<:github_white:880034279990640680>',
+								style: 'LINK',
+								url: 'https://github.com/OmsinKrissada/hw-tracker/'
+							},]
 					}]
 				});
 				break;
