@@ -11,6 +11,9 @@ import { IsNull, Not } from 'typeorm';
 import { appendTime } from './Helper';
 import { Homework } from './models/Homework';
 
+logger.info('Initiating ...');
+logger.info(`Running on Node ${process.version}`);
+
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
 let announce_guild: Guild;
