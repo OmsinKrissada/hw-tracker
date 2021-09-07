@@ -1,4 +1,4 @@
-import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, TextChannel } from 'discord.js';
+import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, MessageEmbedOptions, TextChannel } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
@@ -183,7 +183,7 @@ bot.once('ready', async () => {
 	});
 	logger.info(`${deleteJobs.size} Auto-delete task(s) registered.`);
 
-	bot.application.commands.set([{
+	ConfigManager.update_commands && bot.application.commands.set([{
 		name: 'hw',
 		description: 'Opens homework menu.',
 	},
@@ -230,14 +230,24 @@ bot.on('interactionCreate', async interaction => {
 		}
 		switch (interaction.commandName) {
 			case 'hw': {
-				const useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
-				interaction.reply({
+				let useLocal: boolean;
+				try {
+					useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
+				} catch (err) {
+					logger.warn('Failed to read from database');
+					const embed: MessageEmbedOptions = {
+						description: `**Cannot read from database**:\n${err}`,
+						color: ConfigManager.color.red
+					};
+					interaction.reply({ embeds: [embed] });
+					return;
+				} interaction.reply({
 					embeds: [{
 						title: `Homework Menu ${useLocal ? '(LOCAL MODE)' : ''}`,
 						description: `Thank you for using my homework bot! 😄\nHere is the navigation menu. 👇\n\n` +
-							`📕 <:join_arrow:845520716715917314> เหลืออีก 1 วัน\n` +
-							`📙 <:join_arrow:845520716715917314> เหลืออีก 3 วัน\n` +
-							`📗 <:join_arrow:845520716715917314> เหลือมากกว่า 3 วัน\n` +
+							`📕 <:join_arrow:845520716715917314> < 1 วัน\n` +
+							`📙 <:join_arrow:845520716715917314> ≤ 3 วัน\n` +
+							`📗 <:join_arrow:845520716715917314> > 3 วัน\n` +
 							`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
 							`Try \`/list\`, \`/add\` or \`/remove\`!\n\n`,
 						color: ConfigManager.color.blue,

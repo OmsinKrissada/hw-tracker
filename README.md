@@ -43,6 +43,7 @@ color:
     aqua: 0x34ebbd
     pink: 0xed37f0
 
+update_commands: true
 pause_announce: false
 dev_mode: false
 ```

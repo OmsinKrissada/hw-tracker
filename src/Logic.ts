@@ -38,10 +38,11 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 	const { channel } = interaction;
 	if (!channel.isText()) return;
 
-	const useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
-	const whereClause = (useLocal ? `${interaction.guild.id}` : `GLOBAL`);
 	let hws: Homework[];
+	let useLocal: boolean;
 	try {
+		useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
+		const whereClause = (useLocal ? `${interaction.guild.id}` : `GLOBAL`);
 		let builder: SelectQueryBuilder<Homework> = HomeworkRepository
 			.createQueryBuilder()
 			.select('*')
@@ -51,6 +52,7 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		if (showDeleted) builder.withDeleted();
 		hws = await builder.getRawMany();
 	} catch (err) {
+		logger.warn('Failed to read from database');
 		const embed: MessageEmbedOptions = {
 			description: `**Cannot read from database**:\n${err}`,
 			color: ConfigManager.color.red

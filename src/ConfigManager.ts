@@ -43,6 +43,7 @@ interface ConfigOption {
 		readonly aqua: number;
 		readonly pink: number;
 	};
+	readonly update_commands: boolean;
 	readonly pause_announce: boolean;
 	readonly dev_mode: boolean;
 }
