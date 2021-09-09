@@ -3,7 +3,7 @@ import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
 import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
-import subjects from './subjects.json';
+import subjects from '../subjects.json';
 import { announce_channel, deleteJobs, remind10mJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs } from './Main';
 import { GuildDataRepository, HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';

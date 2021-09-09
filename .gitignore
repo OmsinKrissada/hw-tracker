@@ -4,3 +4,4 @@ dist
 logs
 *.db
 ignored/
+subjects.json

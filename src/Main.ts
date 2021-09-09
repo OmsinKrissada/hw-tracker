@@ -4,7 +4,7 @@ import moment from 'moment-timezone';
 
 import * as Tracker from './Logic';
 import ConfigManager from './ConfigManager';
-import subjects from './subjects.json';
+import subjects from '../subjects.json';
 import { connectDB, GuildDataRepository, HomeworkRepository } from './DBManager';
 import { logger } from './Logger';
 import { IsNull, Not } from 'typeorm';
