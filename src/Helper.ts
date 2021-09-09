@@ -262,3 +262,10 @@ export function appendTime(date: Date, time: string) {
 	date.setHours(+hours, +mins);
 	return date;
 }
+
+export interface Subject {
+	name: string;
+	subID: string;
+	msteam: string;
+	classes: string[];
+};

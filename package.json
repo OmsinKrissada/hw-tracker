@@ -4,7 +4,7 @@
 	"description": "",
 	"main": "dist/Main.js",
 	"scripts": {
-		"start": "node ./dist/src/Main.js",
+		"start": "node ./dist/Main.js",
 		"dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"npx ts-node src/Main.ts\"",
 		"build": "rimraf dist && tsc"
 	},

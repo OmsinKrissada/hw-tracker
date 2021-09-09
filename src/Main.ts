@@ -1,18 +1,30 @@
+import fs from 'fs';
+import { logger } from './Logger';
+
+logger.info('Initiating ...');
+logger.info(`Running on Node ${process.version}`);
+
+export const subjects = function () {
+	try {
+		return JSON.parse(fs.readFileSync('subjects.json', 'utf-8')) as Subject[];
+	} catch (err) {
+		logger.error(`Unable to parse subjects.json: ${err}`);
+		process.exit(1);
+	}
+}();
+
+
 import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, MessageEmbedOptions, TextChannel } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
 
 import * as Tracker from './Logic';
 import ConfigManager from './ConfigManager';
-import subjects from '../subjects.json';
 import { connectDB, GuildDataRepository, HomeworkRepository } from './DBManager';
-import { logger } from './Logger';
 import { IsNull, Not } from 'typeorm';
-import { appendTime } from './Helper';
+import { appendTime, Subject } from './Helper';
 import { Homework } from './models/Homework';
 
-logger.info('Initiating ...');
-logger.info(`Running on Node ${process.version}`);
 
 const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
@@ -85,6 +97,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	}
 
 	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
+		if (!ConfigManager.remind1hr) return;
 		logger.debug(`Remind 1 hour ${hw.id}`);
 		announce_channel.send({
 			content: `1 hour left before deadline <@&${ConfigManager.subscriber_role}>`,
@@ -98,6 +111,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		}, 60 * 60 * 1000));
 	});
 	const remind10mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(10, 'm').toDate(), () => {
+		if (!ConfigManager.remind10m) return;
 		logger.debug(`Remind 10 mins ${hw.id}`);
 		announce_channel.send({
 			content: `10 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
@@ -111,6 +125,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		}, 10 * 60 * 1000));
 	});
 	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
+		if (!ConfigManager.remind5m) return;
 		logger.debug(`Remind 5 mins ${hw.id}`);
 		announce_channel.send({
 			content: `5 mins left before deadline <@&${ConfigManager.subscriber_role}>`,

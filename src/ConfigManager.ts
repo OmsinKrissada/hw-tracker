@@ -13,6 +13,9 @@ import { logger } from './Logger';
 
 interface ConfigOption {
 	readonly token: string;
+	readonly remind1hr: boolean;
+	readonly remind10m: boolean;
+	readonly remind5m: boolean;
 	readonly guildId: `${bigint}`;
 	readonly channelId: `${bigint}`;
 	readonly subscriber_role: `${bigint}`;
@@ -48,22 +51,6 @@ interface ConfigOption {
 	readonly pause_announce: boolean;
 	readonly dev_mode: boolean;
 }
-
-// const validator = new YamlValidator({
-// 	log: false,
-// 	structure: {
-// 		token: 'string',
-// 		guildId: 'string',
-// 		channelId: 'string'
-// 	},
-// 	onWarning: undefined,
-// 	writeJson: false
-// });
-// validator.validate(['./config.yml']);
-// if (validator.report()) {
-// 	console.error('ERROR: Bad Configuration Format');
-// 	process.exit();
-// }
 
 let loaded;
 try {

@@ -22,7 +22,7 @@ token: discord bot token here
 # Whether to remind 1 hour before deadline
 remind1hr: true
 # Whether to remind 10 minutes before deadline
-remind10min: true
+remind10m: true
 # Whether to remind 5 minutes before deadline
 remind5m: true
 
@@ -73,8 +73,6 @@ dev_mode: false
 
 Create a file name `subjects.json` in the same directory as `package.json` using the following template:
 The file shall be an array of subjects.
-
-**YOU NEED TO RUN `npm run build` AFTER MODIFYING THIS FILE**
 
 ```json
 [
