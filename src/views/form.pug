@@ -19,7 +19,7 @@ html(lang='en')
 			// <img src="assets/logout.png" alt="logout" id="logout">
 
 
-		form(action=`/add/${token}` method='post')
+		form(action=`${endpoint}/add/${token}` method='post')
 			h2 Add Homework
 			label(for='title') Title (required)
 			input.field(type='text' name='title' autocomplete='off' required='')

@@ -40,6 +40,7 @@ app.get('/', (req, res) => {
 		username: username,
 		discriminator: discriminator,
 		avatarURL: decoded.issuer.avatarURL,
+		endpoint: ConfigManager.web.endpoint,
 		token: encodeURIComponent(<string>token),
 		subjects: subjects.sort((s1, s2) => s1.name.localeCompare(s2.name))
 	});
