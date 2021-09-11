@@ -13,10 +13,10 @@ export const subjects = function () {
 	}
 }();
 
-
 import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, MessageEmbedOptions, TextChannel } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
+import jwt from 'jsonwebtoken';
 
 import * as Tracker from './Logic';
 import ConfigManager from './ConfigManager';
@@ -25,8 +25,9 @@ import { IsNull, Not } from 'typeorm';
 import { appendTime, Subject } from './Helper';
 import { Homework } from './models/Homework';
 
+if (ConfigManager.web.enable) import('./Web');
 
-const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
+export const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
 let announce_guild: Guild;
 export let announce_channel: TextChannel;
@@ -256,7 +257,9 @@ bot.on('interactionCreate', async interaction => {
 					};
 					interaction.reply({ embeds: [embed] });
 					return;
-				} interaction.reply({
+				};
+
+				interaction.reply({
 					embeds: [{
 						title: `Homework Menu ${useLocal ? '(LOCAL MODE)' : ''}`,
 						description: `Thank you for using my homework bot! 😄\nHere is the navigation menu. 👇\n\n` +
@@ -362,8 +365,28 @@ bot.on('interactionCreate', async interaction => {
 					interaction.deferUpdate();
 					break;
 				case 'hw_add':
-					interaction.deferUpdate();
-					Tracker.add(interaction);
+					if (!ConfigManager.web.enable) {
+						interaction.deferUpdate();
+						Tracker.add(interaction);
+					} else {
+						let useLocal = (await GuildDataRepository.findOne(interaction.guild.id))?.useLocal;
+						const token = jwt.sign({
+							guild: interaction.guild.id,
+							channel: interaction.channel.id,
+							isLocal: useLocal,
+							issuer: {
+								id: interaction.user.id,
+								tag: interaction.user.tag, avatarURL: interaction.user.displayAvatarURL()
+							}
+						}, ConfigManager.web.jwt_secret);
+						const add_url = `${ConfigManager.web.endpoint}?token=${encodeURIComponent(token)}`;
+						interaction.reply({
+							embeds: [{
+								description: `Please continue on web using [THIS LINK](${add_url})\nor continue with old method using \`/add\``
+							}],
+							ephemeral: true
+						});
+					}
 					break;
 				case 'hw_remove':
 					interaction.update({
@@ -418,6 +441,7 @@ bot.on('interactionCreate', async interaction => {
 					await Promise.race([reply_promise, cancel_promise]);
 
 					break;
+
 
 			}
 		}

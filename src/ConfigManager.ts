@@ -50,6 +50,13 @@ interface ConfigOption {
 	readonly update_commands: boolean;
 	readonly pause_announce: boolean;
 	readonly dev_mode: boolean;
+
+	readonly web: {
+		readonly enable: boolean;
+		readonly port: number;
+		readonly endpoint: string;
+		readonly jwt_secret: string;
+	};
 }
 
 let loaded;
