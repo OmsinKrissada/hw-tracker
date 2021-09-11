@@ -28,8 +28,8 @@ app.get('/', (req, res) => {
 		try {
 			return jwt.verify(<string>token, ConfigManager.web.jwt_secret);
 		} catch (err) {
-			console.log(`root reject cause: ${err}`);
-			res.status(401).render('no_access');
+			logger.info(`root reject cause: ${err}`);
+			res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint });
 			return null;
 		}
 	}() as any;
@@ -53,8 +53,8 @@ app.post('/add/:token', (req, res) => {
 		try {
 			return jwt.verify(<string>token, ConfigManager.web.jwt_secret);
 		} catch (err) {
-			console.log(`add reject cause: ${err}`);
-			res.status(401).render('no_access');
+			logger.info(`add reject cause: ${err}`);
+			res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint });
 			return null;
 		}
 	}() as any;
@@ -100,7 +100,7 @@ app.post('/add/:token', (req, res) => {
 				scheduleDeleteJobs(hw);
 			}
 		});
-		res.render('success');
+		res.render('success', { endpoint: ConfigManager.web.endpoint });
 	} catch (err) {
 		res.status(500).send(`an error occured, please report this back to omsin: \n${err}`);
 	}
