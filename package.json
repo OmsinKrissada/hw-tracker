@@ -6,7 +6,9 @@
 	"scripts": {
 		"start": "node ./dist/Main.js",
 		"dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"npx ts-node src/Main.ts\"",
-		"build": "rimraf dist && tsc"
+		"build": "npm run clean && tsc && npm run copy",
+		"clean": "rimraf dist",
+		"copy": "ncp src/views dist/views && ncp src/assets dist/assets"
 	},
 	"keywords": [],
 	"author": "",
@@ -20,6 +22,7 @@
 		"moment-timezone": "^0.5.33",
 		"mysql2": "^2.2.5",
 		"n-readlines": "^1.0.1",
+		"ncp": "^2.0.0",
 		"node-schedule": "^2.0.0",
 		"pg": "^8.6.0",
 		"pug": "^3.0.2",

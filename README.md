@@ -66,6 +66,13 @@ color:
     aqua: 0x34ebbd
     pink: 0xed37f0
 
+# Web interface for "add" form
+web:
+    enable: false
+    port: 8080
+    endpoint: http://127.0.0.1:8080
+    jwt_secret: a_jwt_secret
+
 update_commands: true
 pause_announce: false
 dev_mode: false
