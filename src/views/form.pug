@@ -29,8 +29,8 @@ html(lang='en')
 				label(for='subject') Subject (required)
 				select.field(type='text' name='subject' required='')
 					option(value='' selected='' disabled='' hidden='') Choose a subject
-					//- each subject in subjects
-					//- 	option(value=subject.subID) #{subject.name}
+					each subject in subjects
+						option(value=subject.subID) #{subject.name}
 				#datetime 
 					label(for='date') Date
 					input.field(type='date' name='date')
