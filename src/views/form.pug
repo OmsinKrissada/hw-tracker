@@ -8,6 +8,7 @@ html(lang='en')
 		link(rel='preconnect' href='https://fonts.googleapis.com')
 		link(rel='preconnect' href='https://fonts.gstatic.com' crossorigin='')
 		link(href='https://fonts.googleapis.com/css2?family=Inter&display=swap' rel='stylesheet')
+		link(rel="icon" type="image/ico" href=`${endpoint}/favicon.ico`)
 		// <meta http-equiv="refresh" content="0; url=https://www.youtube.com/watch?v=YxjY_YTksKM" />
 		title Homework Tracker WEB
 
@@ -93,12 +94,26 @@ html(lang='en')
 			margin: 1.5vmin;
 			border-radius: 10px;
 
-			background-color: rgb(60, 75, 90);
+			background-color: rgb(60, 70, 90);
 		}
 
 		#menu p {
 			margin: 2px;
 			/* font-weight: 500; */
+		}
+
+		#avatar {
+			width: 35px;
+			margin-right: 10px;
+			border-radius: 50%;
+		}
+
+		#username {
+		}
+
+		#discriminator {
+			color: rgb(199, 199, 199);
+			font-weight: 600;
 		}
 
 		h2 {
@@ -171,20 +186,6 @@ html(lang='en')
 			font-weight: bolder;
 		}
 
-		#avatar {
-			width: 35px;
-			margin-right: 10px;
-			border-radius: 50%;
-		}
-
-		#username {
-		}
-
-		#discriminator {
-			color: rgb(199, 199, 199);
-			font-weight: 800;
-		}
-
 		#logout {
 			margin-left: 10px;
 			width: 20px;
@@ -206,7 +207,7 @@ html(lang='en')
 			}
 
 			h2 {
-				//- margin: 5px;
+				margin-top: 5px;
 			}
 
 			label {
@@ -234,7 +235,9 @@ html(lang='en')
 			}
 
 			#menu {
-				background-color: transparent;
+				margin-top: 20px;
+				margin-right: 20px;
+				//- background-color: transparent;
 			}
 
 			/* #avatar,

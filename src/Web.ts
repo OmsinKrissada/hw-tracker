@@ -108,4 +108,4 @@ app.post('/add/:token', (req, res) => {
 });
 
 
-app.listen(ConfigManager.web.port, () => logger.debug(`Listening on port ${ConfigManager.web.port}`));
+app.listen(ConfigManager.web.port, () => logger.info(`Listening on port ${ConfigManager.web.port}`));

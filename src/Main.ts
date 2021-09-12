@@ -382,10 +382,12 @@ bot.on('interactionCreate', async interaction => {
 						const add_url = `${ConfigManager.web.endpoint}?token=${encodeURIComponent(token)}`;
 						interaction.reply({
 							embeds: [{
-								description: `Please continue on web using [THIS LINK](${add_url})\nor continue with old method using \`/add\``
+								description: `Please continue on web using ${add_url}\nor continue with old method using \`/add\``,
+								color: ConfigManager.color.aqua
 							}],
 							ephemeral: true
 						});
+						(<Message>interaction.message).delete();
 					}
 					break;
 				case 'hw_remove':
