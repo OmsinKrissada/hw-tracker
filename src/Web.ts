@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
 		try {
 			return jwt.verify(<string>token, ConfigManager.web.jwt_secret);
 		} catch (err) {
-			logger.info(`root reject cause: ${err}`);
+			logger.debug(`root reject cause: ${err}`);
 			res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint });
 			return null;
 		}
@@ -53,7 +53,7 @@ app.post('/add/:token', (req, res) => {
 		try {
 			return jwt.verify(<string>token, ConfigManager.web.jwt_secret);
 		} catch (err) {
-			logger.info(`add reject cause: ${err}`);
+			logger.debug(`add reject cause: ${err}`);
 			res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint });
 			return null;
 		}

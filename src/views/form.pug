@@ -12,48 +12,97 @@ html(lang='en')
 		title Homework Tracker WEB
 
 	body
-		#menu
-			img#avatar(src=avatarURL alt='avatar')
-			p#username #{username}
-			p#discriminator ##{discriminator}
-			// <img src="assets/logout.png" alt="logout" id="logout">
+		nav#nav
+			#menu
+				img#avatar(src=avatarURL||'https://cdn.discordapp.com/embed/avatars/0.png' alt='avatar')
+				p#username #{username||'Username'}
+				p#discriminator ##{discriminator||'0000'}
+				// <img src="assets/logout.png" alt="logout" id="logout">
 
-
-		form(action=`${endpoint}/add/${token}` method='post')
-			h2 Add Homework
-			label(for='title') Title (required)
-			input.field(type='text' name='title' autocomplete='off' required='')
-			label(for='detail') Detail
-			input.field(type='text' name='detail' autocomplete='off')
-			label(for='subject') Subject (required)
-			select.field(type='text' name='subject' required='')
-				option(value='' selected='' disabled='' hidden='') Choose a subject
-				each subject in subjects
-					option(value=subject.subID) #{subject.name}
-			#datetime 
-				label(for='date') Date
-				input.field(type='date' name='date')
-				label(for='time') Time
-				input.field(type='time' name='time')
-			input#submit.field(type='submit' value='SUBMIT')
+		#page
+			form(action=`${endpoint}/add/${token}` method='post')
+				h2 Add Homework
+				label(for='title') Title (required)
+				input.field(type='text' name='title' autocomplete='off' required='')
+				label(for='detail') Detail
+				input.field(type='text' name='detail' autocomplete='off')
+				label(for='subject') Subject (required)
+				select.field(type='text' name='subject' required='')
+					option(value='' selected='' disabled='' hidden='') Choose a subject
+					//- each subject in subjects
+					//- 	option(value=subject.subID) #{subject.name}
+				#datetime 
+					label(for='date') Date
+					input.field(type='date' name='date')
+					label(for='time') Time
+					input.field(type='time' name='time')
+				input#submit.field(type='submit' value='SUBMIT')
 
 	style.
-		* {
-			box-sizing: border-box;
+		*,
+		*::before,
+		*::after {
+			box-sizing: inherit;
 			margin: 0px;
 		}
 
-		body {
-			display: flex;
-			justify-content: center;
-			align-items: center;
+		html {
+			box-sizing: border-box;
+		}
 
+		body {
+			position: relative;
+			display: flex;
+			flex-direction: column;
 			min-height: 100vh;
 
 			background-color: rgb(15, 15, 15);
 			color: white;
 
 			font-family: "Inter", sans-serif;
+		}
+
+		#page {
+			position: relative;
+			flex: 1 1 auto;
+
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#nav {
+			display: flex;
+			justify-content: flex-end;
+			
+			height: fit-content;
+			width: 100%;
+		}
+		
+		#menu {
+			cursor: default;
+			position: relative;
+
+			display: flex;
+			justify-content: space-evenly;
+			align-items: center;
+
+			width: fit-content;
+			padding: 7px;
+			margin: 1.5vmin;
+			border-radius: 10px;
+
+			background-color: rgb(60, 75, 90);
+		}
+
+		#menu p {
+			margin: 2px;
+			/* font-weight: 500; */
+		}
+
+		h2 {
+			margin: 16px;
 		}
 
 		form {
@@ -67,8 +116,6 @@ html(lang='en')
 			box-shadow: 3px 3px 2px rgb(26, 26, 26);
 
 			max-width: 90vw;
-			/* width: 200px; */
-			/* height: 800px; */
 			background-color: rgb(36, 45, 59);
 		}
 
@@ -92,7 +139,7 @@ html(lang='en')
 			height: 36px;
 
 			outline: none;
-			border: 3px solid #777777;
+			border: 2px solid #777777;
 			border-radius: 5px;
 
 			color: white;
@@ -122,27 +169,6 @@ html(lang='en')
 			box-shadow: 0px 0px 8px black;
 			background-color: rgb(6, 161, 102);
 			font-weight: bolder;
-		}
-
-		#menu {
-			cursor: default;
-			position: absolute;
-			display: flex;
-			justify-content: space-evenly;
-			align-items: center;
-
-			padding: 7px;
-			border-radius: 10px;
-
-			top: 2vmin;
-			right: 2vmin;
-
-			background-color: rgb(60, 75, 90);
-		}
-
-		#menu p {
-			margin: 2px;
-			/* font-weight: 500; */
 		}
 
 		#avatar {
@@ -180,7 +206,7 @@ html(lang='en')
 			}
 
 			h2 {
-				margin: 5px;
+				//- margin: 5px;
 			}
 
 			label {
