@@ -147,7 +147,8 @@ export function scheduleDeleteJobs(hw: Homework) {
 			embeds: [{
 				title: '⚠ DEADLINE HIT',
 				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
-				color: ConfigManager.color.yellow
+				color: ConfigManager.color.yellow,
+				footer: { text: `Thanks to ${bot.users.resolve(hw.author).tag}` }
 			}]
 		});
 	});

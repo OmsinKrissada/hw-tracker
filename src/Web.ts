@@ -107,5 +107,5 @@ app.post('/add/:token', (req, res) => {
 
 });
 
-
-app.listen(ConfigManager.web.port, () => logger.info(`Listening on port ${ConfigManager.web.port}`));
+const port = process.env.PORT ?? ConfigManager.web.port;
+app.listen(port, () => logger.info(`Listening on port ${port}`));

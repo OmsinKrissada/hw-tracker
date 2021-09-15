@@ -69,6 +69,7 @@ color:
 # Web interface for "add" form
 web:
     enable: false
+    # Port is overridden if $PORT env variable is defined
     port: 8080
     endpoint: http://127.0.0.1:8080
     jwt_secret: a_jwt_secret

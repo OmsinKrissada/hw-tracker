@@ -489,7 +489,7 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 			components: []
 		});
 	else {
-		await HomeworkRepository.softDelete(hw.id);
+		await HomeworkRepository.delete(hw.id);
 		logger.debug(`deleted ${id}`);
 		if (hw.dueTime) {
 			hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
