@@ -89,7 +89,7 @@ app.get('/add/redirect', async (req, res) => {
 		}
 
 	} catch (err) {
-		res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Invalid code query. Remind that the link is for one-time use.` });
+		res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Invalid code query. Remind that the link is for one-time use.\nIf this is not your fault, please send this to me: ${err}` });
 		// logger.warn(`${err}`);
 		return;
 	}
