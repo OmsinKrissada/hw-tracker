@@ -10,7 +10,7 @@ html(lang='en')
 		link(href='https://fonts.googleapis.com/css2?family=Inter&display=swap' rel='stylesheet')
 		link(rel="icon" type="image/ico" href=`${endpoint}/favicon.ico`)
 		// <meta http-equiv="refresh" content="0; url=https://www.youtube.com/watch?v=YxjY_YTksKM" />
-		title Homework Tracker WEB
+		title Homework Creation
 
 	body
 		nav#nav
@@ -162,7 +162,7 @@ html(lang='en')
 
 			font-size: 17px;
 
-			transition: 0.3s border-color;
+			transition: border-color 0.3s, box-shadow 0.3s;
 		}
 
 		form > .field {
@@ -171,6 +171,7 @@ html(lang='en')
 
 		.field:focus {
 			border-color: rgb(20, 126, 126);
+			box-shadow: 0px 0px 5px rgb(20 126 126);
 		}
 
 		#datetime {

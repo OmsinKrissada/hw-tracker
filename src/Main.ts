@@ -282,8 +282,12 @@ bot.on('interactionCreate', async interaction => {
 						{
 							type: 'BUTTON',
 							label: '➕ Add',
-							style: 'SECONDARY',
-							customId: 'hw_add'
+							style: 'LINK',
+							url: `https://discord.com/api/oauth2/authorize?client_id=${bot.application.id}&redirect_uri=${encodeURIComponent(ConfigManager.web.endpoint + '/add/redirect')}&response_type=code&scope=identify&prompt=none&state=${Buffer.from(JSON.stringify({
+								guild: interaction.guild.id,
+								channel: interaction.channel.id,
+								isLocal: (await GuildDataRepository.findOne(interaction.guild.id))?.useLocal
+							})).toString('base64url')}`
 						},
 						{
 							type: 'BUTTON',
@@ -461,7 +465,7 @@ export const remind10mJobs = new Map<number, schedule.Job>();
 export const remind5mJobs = new Map<number, schedule.Job>();
 
 connectDB().then(() => {
-	bot.login(ConfigManager.token).then(() => {
+	bot.login(ConfigManager.discord.token).then(() => {
 		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`);
 	});
 });

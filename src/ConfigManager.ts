@@ -12,7 +12,10 @@ import { logger } from './Logger';
 
 
 interface ConfigOption {
-	readonly token: string;
+	readonly discord: {
+		readonly token: string;
+		readonly client_secret: string;
+	};
 	readonly remind1hr: boolean;
 	readonly remind10m: boolean;
 	readonly remind5m: boolean;
