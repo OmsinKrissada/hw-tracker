@@ -114,5 +114,5 @@ npm start
 ## Notice
 
 -   SQLite currently has problem with displaying timezones
--   Postgres has problem syncing relation schema
-    (only MySQL is fully support at this moment)
+-   ~~Postgres has problem syncing relation schema
+    (only MySQL is fully support at this moment)~~

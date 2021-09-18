@@ -41,15 +41,22 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 	let useLocal: boolean;
 	try {
 		useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
-		const whereClause = (useLocal ? `${interaction.guild.id}` : `GLOBAL`);
-		let builder: SelectQueryBuilder<Homework> = HomeworkRepository
-			.createQueryBuilder()
-			.select('*')
-			.where({ guild: whereClause })
-			.addOrderBy('-dueDate', 'DESC')
-			.addOrderBy('-dueTime', 'DESC');
-		if (showDeleted) builder.withDeleted();
-		hws = await builder.getRawMany();
+		const targetGuild = (useLocal ? `${interaction.guild.id}` : `GLOBAL`);
+		hws = await HomeworkRepository.find({ where: { guild: targetGuild }, withDeleted: showDeleted });
+		hws.sort((a, b) => {
+			const a_time = moment.duration(a.dueTime).asSeconds();
+			const b_time = moment.duration(b.dueTime).asSeconds();
+			if (a_time - b_time == 0) return 0;
+			if (a_time == 0) return 1;
+			if (b_time == 0) return -1;
+			return a_time - b_time;
+		});
+		hws.sort((a, b) => {
+			if (!a.dueDate && !b.dueDate) return 0;
+			if (!a.dueDate) return 1;
+			if (!b.dueDate) return -1;
+			return a.dueDate?.valueOf() - b.dueDate?.valueOf();
+		});
 	} catch (err) {
 		logger.warn('Failed to read from database');
 		const embed: MessageEmbedOptions = {
