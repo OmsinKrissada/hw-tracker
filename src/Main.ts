@@ -303,7 +303,7 @@ bot.on('interactionCreate', async interaction => {
 								label: 'Google Data Studio',
 								emoji: '<:gds:880037684427509770>',
 								style: 'LINK',
-								url: 'https://omsinkrissada.github.io/hw-tracker/'
+								url: 'https://omsinkrissada.sytes.net/homework/'
 							},
 							{
 								type: 'BUTTON',

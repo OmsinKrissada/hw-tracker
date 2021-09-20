@@ -24,6 +24,11 @@ app.use('/favicon.ico', (req, res) => {
 	res.sendFile(path.join(__dirname, 'assets', 'favicon.ico'));
 });
 
+
+app.get('/', (req, res) => {
+	res.render('list', { endpoint: ConfigManager.web.endpoint });
+});
+
 // Real logic
 
 app.get('/add/redirect', async (req, res) => {
@@ -168,6 +173,20 @@ app.post('/add/:token', (req, res) => {
 		res.status(500).send(`an error occured, please report this back to omsin: \n${err}`);
 	}
 
+});
+
+// Page not found
+app.use(function (req, res, next) {
+	res.status(404);
+	if (req.accepts('html')) {
+		res.render('404', { endpoint: ConfigManager.web.endpoint });
+		return;
+	}
+	if (req.accepts('json')) {
+		res.json({ error: 'Not found' });
+		return;
+	}
+	res.type('txt').send('Not found');
 });
 
 const port = process.env.PORT ?? ConfigManager.web.port;
