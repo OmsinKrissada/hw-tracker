@@ -14,8 +14,9 @@ Create a file name `config.yml` in the same directory as `package.json` using th
 #
 
 # Discord bot token obtainable from https://discord.com/developers/
-token: discord bot token here
-
+discord:
+    token: discord bot token here
+    client_secret: CLIENT SECRET from developers OAuth dashboard
 #
 # Enable reminder to be sent when deadline is about to hit
 #
