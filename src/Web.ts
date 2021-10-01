@@ -48,8 +48,10 @@ app.get('/add/redirect', async (req, res) => {
 		}
 	}() as any;
 
-	const { guild, channel, isLocal } = parsed;
-	if (!guild || !channel || isLocal == undefined) {
+	const { guild, channel, _isLocal } = parsed;
+	const isLocal = _isLocal ?? false;
+
+	if (!guild || !channel) {
 		res.status(400).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Malformed state query, try re-running the command or contact me.` });
 		return;
 	}
