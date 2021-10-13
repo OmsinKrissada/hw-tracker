@@ -20,6 +20,8 @@ discord:
 #
 # Enable reminder to be sent when deadline is about to hit
 #
+# Whether to remind 1 day before deadline
+remind1d: true
 # Whether to remind 1 hour before deadline
 remind1hr: true
 # Whether to remind 10 minutes before deadline

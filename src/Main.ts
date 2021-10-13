@@ -97,6 +97,20 @@ export function scheduleDeleteJobs(hw: Homework) {
 		hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
 	}
 
+	const remind1dJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'd').toDate(), () => {
+		if (!ConfigManager.remind1d) return;
+		logger.debug(`Remind 1 day ${hw.id}`);
+		announce_channel.send({
+			content: `1 day left before deadline <@&${ConfigManager.subscriber_role}>`,
+			embeds: [{
+				title: 'REMINDER! - __1 DAY LEFT__ For',
+				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				color: ConfigManager.color.light_yellow
+			}]
+		}).then(msg => setTimeout(() => {
+			if (!msg.deleted && msg.deletable) msg.delete();
+		}, (24 - 1) * 60 * 60 * 1000));
+	});
 	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
 		if (!ConfigManager.remind1hr) return;
 		logger.debug(`Remind 1 hour ${hw.id}`);
@@ -109,7 +123,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			}]
 		}).then(msg => setTimeout(() => {
 			if (!msg.deleted && msg.deletable) msg.delete();
-		}, 60 * 60 * 1000));
+		}, (60 - 10) * 60 * 1000));
 	});
 	const remind10mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(10, 'm').toDate(), () => {
 		if (!ConfigManager.remind10m) return;
@@ -123,7 +137,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			}]
 		}).then(msg => setTimeout(() => {
 			if (!msg.deleted && msg.deletable) msg.delete();
-		}, 10 * 60 * 1000));
+		}, (10 - 5) * 60 * 1000));
 	});
 	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
 		if (!ConfigManager.remind5m) return;
@@ -145,14 +159,15 @@ export function scheduleDeleteJobs(hw: Homework) {
 		announce_channel.send({
 			content: `Time's up! <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
-				title: '⚠ DEADLINE HIT',
+				title: '⏰ DEADLINE HIT',
 				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
-				footer: { text: `Thanks to ${bot.users.resolve(hw.author).tag}` }
+				footer: { text: `Added by ${bot.users.resolve(hw.author).tag}` }
 			}]
 		});
 	});
 
+	if (remind1dJob) remind1dJobs.set(hw.id, remind1dJob);
 	if (remind1hJob) remind1hJobs.set(hw.id, remind1hJob);
 	if (remind5mJob) remind5mJobs.set(hw.id, remind5mJob);
 	if (remind10mJob) remind10mJobs.set(hw.id, remind10mJob);
@@ -460,6 +475,7 @@ bot.on('interactionCreate', async interaction => {
 
 
 export const deleteJobs = new Map<number, schedule.Job>();
+export const remind1dJobs = new Map<number, schedule.Job>();
 export const remind1hJobs = new Map<number, schedule.Job>();
 export const remind10mJobs = new Map<number, schedule.Job>();
 export const remind5mJobs = new Map<number, schedule.Job>();
@@ -477,37 +493,3 @@ function gracefulExit(signal: NodeJS.Signals) {
 	logger.info('Successfully destroyed the bot instance.');
 	process.exit();
 }
-
-import('readline').then(readline => {
-	const read = readline.createInterface({
-		input: process.stdin,
-		// output: process.stdout,
-		prompt: '> '
-	});
-	read.prompt(true);
-
-	read.on('line', async input => {
-		switch (input) {
-			case 'reload':
-				deleteJobs.forEach(j => j.cancel());
-				remind1hJobs.forEach(j => j.cancel());
-				remind10mJobs.forEach(j => j.cancel());
-				remind5mJobs.forEach(j => j.cancel());
-				deleteJobs.clear();
-				remind1hJobs.clear();
-				remind10mJobs.clear();
-				remind5mJobs.clear();
-				// Register class schedule with given due dates
-				const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()), guild: 'GLOBAL' } });
-				logger.info('Registering auto-delete task(s) ...');
-				hws.forEach(hw => {
-					scheduleDeleteJobs(hw);
-				});
-				logger.info(`${deleteJobs.size} Auto-delete task(s) registered.`);
-				break;
-			default:
-				console.log('Unknown command.');
-		}
-		read.prompt();
-	});
-});

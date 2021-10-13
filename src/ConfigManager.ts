@@ -16,6 +16,7 @@ interface ConfigOption {
 		readonly token: string;
 		readonly client_secret: string;
 	};
+	readonly remind1d: boolean;
 	readonly remind1hr: boolean;
 	readonly remind10m: boolean;
 	readonly remind5m: boolean;

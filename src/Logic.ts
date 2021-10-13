@@ -3,7 +3,7 @@ import moment from 'moment-timezone';
 import fs from 'fs';
 
 import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
-import { deleteJobs, remind10mJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs, subjects } from './Main';
+import { deleteJobs, remind10mJobs, remind1dJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs, subjects } from './Main';
 import { GuildDataRepository, HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
@@ -512,10 +512,12 @@ export const remove = async (interaction: ConsideringInteraction, id: number) =>
 		});
 		if (deleteJobs.has(hw.id)) {
 			deleteJobs.get(hw.id).cancel();
+			remind1dJobs.get(hw.id).cancel();
 			remind1hJobs.get(hw.id).cancel();
 			remind10mJobs.get(hw.id).cancel();
 			remind5mJobs.get(hw.id).cancel();
 			deleteJobs.delete(hw.id);
+			remind1dJobs.delete(hw.id);
 			remind1hJobs.delete(hw.id);
 			remind10mJobs.delete(hw.id);
 			remind5mJobs.delete(hw.id);
