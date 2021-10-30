@@ -58,7 +58,7 @@ interface ConfigOption {
 	readonly web: {
 		readonly enable: boolean;
 		readonly port: number;
-		readonly endpoint: string;
+		readonly redirect_uri: string;
 		readonly jwt_secret: string;
 	};
 }

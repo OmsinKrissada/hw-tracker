@@ -145,7 +145,7 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 
 export const add = async (interaction: ConsideringInteraction) => {
 	if (interaction.isCommand())
-		interaction.reply({ content: 'Please visit https://omsinkrissada.sytes.net/homework', ephemeral: true });
+		interaction.reply({ content: 'Please visit https://omsinkrissada.sytes.net/homework/dashboard#creation-form', ephemeral: true });
 
 
 	// Insert to database

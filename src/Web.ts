@@ -126,7 +126,7 @@ app.post('/auth/discord', async (req, res) => {
 				'client_secret': ConfigManager.discord.client_secret,
 				'grant_type': 'authorization_code',
 				'code': code,
-				'redirect_uri': 'http://192.168.1.39:8080/homework/callback'
+				'redirect_uri': ConfigManager.web.redirect_uri
 			}), {
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded'

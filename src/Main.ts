@@ -279,7 +279,7 @@ bot.on('interactionCreate', async interaction => {
 							`📙 <:join_arrow:845520716715917314> ≤ 3 วัน\n` +
 							`📗 <:join_arrow:845520716715917314> > 3 วัน\n` +
 							`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
-							`Try \`/list\`, \`/add\` or \`/remove\`!\n\n`,
+							`The new website is available!!!\nGo check it out using the button below. 👈`,
 						color: ConfigManager.color.blue,
 					}],
 					components: [{
@@ -292,30 +292,28 @@ bot.on('interactionCreate', async interaction => {
 						},
 						{
 							type: 'BUTTON',
-							label: '➕ Add',
+							label: 'Web Dashboard',
+							emoji: '✨',
 							style: 'LINK',
-							url: `https://discord.com/api/oauth2/authorize?client_id=${bot.application.id}&redirect_uri=${encodeURIComponent(ConfigManager.web.endpoint + '/add/redirect')}&response_type=code&scope=identify&prompt=none&state=${Buffer.from(JSON.stringify({
-								guild: interaction.guild.id,
-								channel: interaction.channel.id,
-								isLocal: (await GuildDataRepository.findOne(interaction.guild.id))?.useLocal
-							})).toString('base64url')}`
-						},
-						{
-							type: 'BUTTON',
-							label: '➖ Remove',
-							style: 'SECONDARY',
-							customId: 'hw_remove'
-						}]
+							url: 'https://omsinkrissada.sytes.net/homework/dashboard#creation-form'
+						}
+							// {
+							// 	type: 'BUTTON',
+							// 	label: '➕ Add',
+							// 	style: 'LINK',
+							// 	url: `https://omsinkrissada.sytes.net/homework/dashboard#creation-form`
+							// },
+							// {
+							// 	type: 'BUTTON',
+							// 	label: '➖ Remove',
+							// 	style: 'SECONDARY',
+							// 	customId: 'hw_remove'
+							// 	}
+						]
 					}, {
 						type: 'ACTION_ROW',
 						components: [
-							{
-								type: 'BUTTON',
-								label: 'Google Data Studio',
-								emoji: '<:gds:880037684427509770>',
-								style: 'LINK',
-								url: 'https://omsinkrissada.sytes.net/homework/'
-							},
+
 							{
 								type: 'BUTTON',
 								label: 'GitHub',
@@ -381,30 +379,8 @@ bot.on('interactionCreate', async interaction => {
 					interaction.deferUpdate();
 					break;
 				case 'hw_add':
-					if (!ConfigManager.web.enable) {
-						interaction.deferUpdate();
-						Tracker.add(interaction);
-					} else {
-						let useLocal = (await GuildDataRepository.findOne(interaction.guild.id))?.useLocal;
-						const token = jwt.sign({
-							guild: interaction.guild.id,
-							channel: interaction.channel.id,
-							isLocal: useLocal,
-							issuer: {
-								id: interaction.user.id,
-								tag: interaction.user.tag, avatarURL: interaction.user.displayAvatarURL()
-							}
-						}, ConfigManager.web.jwt_secret);
-						const add_url = `${ConfigManager.web.endpoint}?token=${encodeURIComponent(token)}`;
-						interaction.reply({
-							embeds: [{
-								description: `Please continue on web using ${add_url}\nor continue with old method using \`/add\``,
-								color: ConfigManager.color.aqua
-							}],
-							ephemeral: true
-						});
-						(<Message>interaction.message).delete();
-					}
+					interaction.deferUpdate();
+					Tracker.add(interaction);
 					break;
 				case 'hw_remove':
 					interaction.update({
