@@ -10,16 +10,13 @@ export class Homework_Default {
 	subID: string;
 
 	@Column()
-	name: string;
+	title: string;
 
 	@Column({ nullable: true })
 	detail: string;
 
-	@Column({ nullable: true })
+	@Column({ nullable: true, precision: 3 })
 	dueDate: Date;
-
-	@Column({ nullable: true, length: 5 })
-	dueTime: string;
 
 	@Column({ length: 18 })
 	author: string; // Discord user id
@@ -45,19 +42,19 @@ export class Homework_MySQL {
 	subID: string;
 
 	@Column()
-	name: string;
+	title: string;
 
 	@Column({ nullable: true })
 	detail: string;
 
-	@Column({ type: 'date', nullable: true })
+	@Column({ nullable: true, precision: 3 })
 	dueDate: Date;
-
-	@Column({ type: 'time', nullable: true })
-	dueTime: string;
 
 	@Column({ length: 18 })
 	author: string; // Discord user id
+
+	@Column({ length: 18, default: 'GLOBAL' })
+	guild: string | 'GLOBAL';
 
 	@CreateDateColumn()
 	createdAt: Date;

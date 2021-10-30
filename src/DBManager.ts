@@ -3,9 +3,12 @@ import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 import { Homework_MySQL, Homework_Default, Homework } from "./models/Homework";
 import { GuildData } from "./models/GuildData";
+import { WebData } from './models/WebData';
 
 export let HomeworkRepository: Repository<Homework> = null;
 export let GuildDataRepository: Repository<GuildData> = null;
+export let WebDataRepository: Repository<WebData> = null;
+
 
 async function connectMySQL() {
 	const name = 'MySQL';
@@ -19,15 +22,15 @@ async function connectMySQL() {
 			"username": ConfigManager.mysql.username,
 			"password": ConfigManager.mysql.password,
 			"database": ConfigManager.mysql.dbname,
-			"synchronize": true,
+			"synchronize": false,
 			"logging": false,
 			"charset": "utf8mb4",
-			"entities": [Homework_Default, GuildData],
+			"entities": [Homework_Default, GuildData, WebData],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
 		HomeworkRepository = DBConnection.getRepository(Homework_Default);
 		GuildDataRepository = DBConnection.getRepository(GuildData);
-
+		WebDataRepository = DBConnection.getRepository(WebData);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');
@@ -45,11 +48,12 @@ async function connectSQLite() {
 			"database": ConfigManager.sqlite.dbpath,
 			"synchronize": true,
 			"logging": false,
-			"entities": [Homework_Default, GuildData],
+			"entities": [Homework_Default, GuildData, WebData],
 		});
 		logger.info(`Successfully connected to ${name} database.`);
 		HomeworkRepository = DBConnection.getRepository(Homework_Default);
 		GuildDataRepository = DBConnection.getRepository(GuildData);
+		WebDataRepository = DBConnection.getRepository(WebData);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} database: ` + err.message);
 		logger.error('Exiting . . .');
@@ -71,11 +75,12 @@ async function connectPostgreSQL() {
 			"database": ConfigManager.postgres.dbname,
 			"synchronize": true,
 			"logging": false,
-			"entities": [Homework_Default, GuildData],
+			"entities": [Homework_Default, GuildData, WebData],
 		});
 		logger.info(`Successfully connected to ${name} server.`);
 		HomeworkRepository = DBConnection.getRepository(Homework_Default);
 		GuildDataRepository = DBConnection.getRepository(GuildData);
+		WebDataRepository = DBConnection.getRepository(WebData);
 	} catch (err) {
 		logger.error(`Failed to connect to ${name} server: ` + err.message);
 		logger.error('Exiting . . .');

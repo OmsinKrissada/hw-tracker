@@ -59,17 +59,17 @@ class LoggerClass {
 	}
 
 
-	info(message: string) {
-		this.internal_logger.info(message);
+	info(message: any) {
+		this.internal_logger.info(message.toString());
 	}
-	warn(message: string) {
-		this.internal_logger.warn(message);
+	warn(message: any) {
+		this.internal_logger.warn(message.toString());
 	}
-	error(message: string) {
-		this.internal_logger.error(message);
+	error(message: any) {
+		this.internal_logger.error(message.toString());
 	}
-	debug(message: string) {
-		this.internal_logger.debug(message);
+	debug(message: any) {
+		this.internal_logger.debug(message.toString());
 	}
 }
 

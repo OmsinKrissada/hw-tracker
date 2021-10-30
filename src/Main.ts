@@ -24,6 +24,7 @@ import { connectDB, GuildDataRepository, HomeworkRepository } from './DBManager'
 import { IsNull, Not } from 'typeorm';
 import { appendTime, Subject } from './Helper';
 import { Homework } from './models/Homework';
+import { listenAPI } from './Web';
 
 if (ConfigManager.web.enable) import('./Web');
 
@@ -90,13 +91,8 @@ async function announce_upcoming(subject: typeof subjects[0]) {
 }
 
 export function scheduleDeleteJobs(hw: Homework) {
-	hw.dueDate = new Date(hw.dueDate);
-	if (hw.dueTime) {
-		hw.dueDate = appendTime(hw.dueDate, hw.dueTime);
-	} else {
-		hw.dueDate = moment(hw.dueDate).endOf('date').toDate();
-	}
-
+	if (!hw.dueDate) throw "doesn't have dueDate";
+	const format = hw.dueDate.valueOf() != moment(hw.dueDate).endOf('date').valueOf() ? 'LLL' : 'LL';
 	const remind1dJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'd').toDate(), () => {
 		if (!ConfigManager.remind1d) return;
 		logger.debug(`Remind 1 day ${hw.id}`);
@@ -104,7 +100,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			content: `1 day left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 DAY LEFT__ For',
-				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.light_yellow
 			}]
 		}).then(msg => setTimeout(() => {
@@ -118,7 +114,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			content: `1 hour left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 HOUR LEFT__ For',
-				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.light_yellow
 			}]
 		}).then(msg => setTimeout(() => {
@@ -132,7 +128,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			content: `10 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __10 MINS LEFT__ For',
-				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.light_yellow
 			}]
 		}).then(msg => setTimeout(() => {
@@ -146,7 +142,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			content: `5 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __5 MINS LEFT__ For',
-				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.light_yellow
 			}]
 		}).then(msg => setTimeout(() => {
@@ -160,7 +156,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			content: `Time's up! <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
-				description: `📕 **${hw.name}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(hw.dueTime ? 'LLL' : 'LL')} ‼` : ''}`,
+				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
 				footer: { text: `Added by ${bot.users.resolve(hw.author).tag}` }
 			}]
@@ -484,6 +480,7 @@ connectDB().then(() => {
 	bot.login(ConfigManager.discord.token).then(() => {
 		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`);
 	});
+	listenAPI();
 });
 
 function gracefulExit(signal: NodeJS.Signals) {

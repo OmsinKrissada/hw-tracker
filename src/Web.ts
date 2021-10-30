@@ -1,195 +1,226 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import path from 'path';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import moment from 'moment';
 import qs from 'qs';
+import cors from 'cors';
 
 import ConfigManager from './ConfigManager';
 import { logger } from './Logger';
-import { scheduleDeleteJobs, subjects } from './Main';
+import { deleteJobs, remind10mJobs, remind1dJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs, subjects } from './Main';
 import { bot } from './Main';
-import { HomeworkRepository } from './DBManager';
+import { HomeworkRepository, WebDataRepository } from './DBManager';
+import { Homework } from './models/Homework';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 const app = express();
-app.set('view engine', 'pug');
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.urlencoded({ extended: true }));
 
-app.use('/assets/:file', (req, res) => {
-	res.sendFile(path.join(__dirname, 'assets', req.params.file));
+// CORS
+app.use((req, res, next) => {
+	const origin = req.get('origin');
+	const allowedOrigins = ['https://omsinkrissada.sytes.net', 'http://192.168.1.39:8080',];
+	if (allowedOrigins.includes(origin)) {
+		cors({ origin: origin })(req, res, next);
+	} else {
+		cors({ origin: 'https://omsinkrissada.sytes.net' })(req, res, next);
+	}
 });
 
-app.use('/favicon.ico', (req, res) => {
-	res.sendFile(path.join(__dirname, 'assets', 'favicon.ico'));
+// Check Content-Type
+app.use((req, res, next) => {
+	if (req.method.toUpperCase() == 'POST' && !req.is('application/json')) {
+		res.status(415).send('only accepts application/json in POST method');
+	} else {
+		express.json()(req, res, next);
+	}
+	return;
 });
 
-
-app.get('/', (req, res) => {
-	res.render('list', { endpoint: ConfigManager.web.endpoint });
+app.use((err, req, res, next) => {
+	if (err) {
+		res.status(400).send('received malformed JSON');
+	}
 });
 
 // Real logic
 
-app.get('/add/redirect', async (req, res) => {
-	const { code, state } = req.query;
-	if (!code || !state) {
-		res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Missing code/state query` });
-		return;
+async function refreshToken(user_id: string) {
+	logger.debug(`Refresh token for ${user_id}`);
+	const { refresh_token } = await WebDataRepository.findOne(user_id);
+	const { access_token: new_access_token, refresh_token: new_refresh_token, expires_in: new_expires_in } = (await axios.post('https://discord.com/api/oauth2/token',
+		qs.stringify({
+			'client_id': bot.application.id,
+			'client_secret': ConfigManager.discord.client_secret,
+			'grant_type': 'refresh_token',
+			'refresh_token': refresh_token
+		}), {
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded'
+		}
+	})).data;
+	logger.debug(`${new_access_token} ${new_refresh_token}`);
+	return await WebDataRepository.save({ discord_id: user_id, access_token: new_access_token, refresh_token: new_refresh_token, expires_in: new_expires_in });
+
+}
+
+const access_cache = new Set<string>();
+async function isAllowedAccess(user_id: string) {
+	// Check in cache first
+	if (access_cache.has(user_id)) return true;
+
+	let { access_token, expires_in, updated_at } = await WebDataRepository.findOne(user_id);
+
+	if (moment(updated_at).add(expires_in, 'second').isBefore(moment())) {
+		({ access_token } = await refreshToken(user_id));
 	}
 
-	const parsed = function () {
-		try {
-			return JSON.parse(Buffer.from(<string>state, 'base64url').toString());
-		} catch (err) {
-			logger.debug(`error decoding parsed state`);
-			res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `${err}` });
-			return null;
+	const bot_guilds = bot.guilds.cache.map(g => g.id);
+	const user_guilds: string[] = (await axios.get('https://discord.com/api/users/@me/guilds', {
+		headers: {
+			'Authorization': `Bearer ${access_token}`
 		}
-	}() as any;
+	})).data.map(g => g.id);
 
-	const { guild, channel, _isLocal } = parsed;
-	const isLocal = _isLocal ?? false;
+	if (user_guilds.some(g => bot_guilds.includes(g))) {
+		logger.debug(`added access cache for ${user_id}`);
+		access_cache.add(user_id);
+		setTimeout(() => {
+			access_cache.delete(user_id);
+			logger.debug(`removed access cache for ${user_id}`);
+		}, 60000);
+		return true;
+	}
+	return false;
+}
 
-	if (!guild || !channel) {
-		res.status(400).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Malformed state query, try re-running the command or contact me.` });
+// my jwt auth
+const auth: RequestHandler = function (req, res, next) {
+	// return next();
+	jwt.verify(req.headers.authorization, ConfigManager.web.jwt_secret, null, (err, decoded) => {
+		if (err) {
+			res.status(401).send(`jwt: ${err.message}`);
+			return;
+		}
+		console.log(decoded['user_id']);
+		const user_id = decoded['user_id'];
+		req['user_id'] = user_id;
+		if (isAllowedAccess(user_id)) return next();
+		return res.status(403).send(`user must share server with the bot`);
+	});
+};
+
+app.post('/auth/discord', async (req, res) => {
+	const { code, state } = req.body;
+	if (!code || !state) {
+		res.status(400).send('code and state must be provided');
 		return;
 	}
 
 	// request access token via oauth2
+	let access_token: string, refresh_token: string, expires_in: number;
 	try {
-		const accessToken = (await axios.post('https://discord.com/api/oauth2/token',
+		({ access_token, refresh_token, expires_in } = (await axios.post('https://discord.com/api/oauth2/token',
 			qs.stringify({
 				'client_id': bot.application.id,
 				'client_secret': ConfigManager.discord.client_secret,
 				'grant_type': 'authorization_code',
 				'code': code,
-				'redirect_uri': ConfigManager.web.endpoint + '/add/redirect'
+				'redirect_uri': 'http://192.168.1.39:8080/homework/callback'
 			}), {
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded'
 			}
-		})).data.access_token;
-
-		const user = (await axios.get('https://discord.com/api/users/@me', {
-			headers: {
-				'Authorization': `Bearer ${accessToken}`
-			}
-		})).data;
-
-		// check access permission
-		let isPresent;
-		try {
-			await bot.guilds.resolve(guild).members.fetch({ user: user.id, force: true });
-			isPresent = true;
-		} catch (err) {
-			isPresent = false;
-		}
-		if (isPresent) {
-			const avatarURL = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=1024`;
-			const jwt_token = jwt.sign({ guild: guild, channel: channel, issuer: { id: user.id, username: user.username, discriminator: user.discriminator, avatarURL: avatarURL }, isLocal: isLocal }, ConfigManager.web.jwt_secret, { expiresIn: '1h' });
-			res.redirect(`${ConfigManager.web.endpoint}/add?token=${jwt_token}`);
-			return;
-		} else {
-			res.status(403).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `You are not in the server this link was created in.` });
-			return;
-		}
-
+		})).data);
 	} catch (err) {
-		res.status(401).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Invalid code query. Remind that the link is for one-time use.\nIf this is not your fault, please send this to me: ${err}` });
-		// logger.warn(`${err}`);
+		res.status(500).send(`Discord OAuth: ${err}`);
 		return;
 	}
+	console.log(access_token, refresh_token);
+	const user = (await axios.get('https://discord.com/api/users/@me', {
+		headers: {
+			'Authorization': `Bearer ${access_token}`
+		}
+	})).data;
+	await WebDataRepository.save({ discord_id: user.id, access_token: access_token, refresh_token: refresh_token, expires_in: expires_in });
 
+	if (await isAllowedAccess(user.id)) {
+		// 	// const avatarURL = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=1024`;
+		const jwt_token = jwt.sign({ user_id: user.id }, ConfigManager.web.jwt_secret, { expiresIn: '1h' });
+		return res.send({ access_token: jwt_token });
+	} else {
+		return res.status(403).send(`user must share server with the bot`);
+	}
 
 });
 
-app.get('/add', (req, res) => {
-	try {
-		const decoded = jwt.verify(req.query.token as string, ConfigManager.web.jwt_secret) as jwt.JwtPayload;
-		res.render('form', {
-			username: decoded.issuer.username,
-			discriminator: decoded.issuer.discriminator,
-			avatarURL: decoded.issuer.avatarURL,
-			endpoint: ConfigManager.web.endpoint,
-			token: encodeURIComponent(req.query.token as string),
-			subjects: subjects.sort((s1, s2) => s1.name.localeCompare(s2.name))
-		});
-	} catch (err) {
-		res.status(403).render('no_access', { endpoint: ConfigManager.web.endpoint, cause: `Invalid token.` });
-		return;
-	}
+
+// Resource provider
+
+app.get('/homeworks', auth, async (req, res) => {
+	const hws = await HomeworkRepository.find({ where: { guild: 'GLOBAL' }, withDeleted: !req.query.current });
+	res.send(hws);
 });
 
-app.get('/add/success', (req, res) => {
-	res.render('success', { endpoint: ConfigManager.web.endpoint });
+app.get('/homeworks/:guild', auth, async (req, res) => {
+	res.sendStatus(501);
+});
+
+app.get('/subjects', auth, async (req, res) => {
+	res.send(subjects);
 });
 
 // on form submit
-app.post('/add/:token', (req, res) => {
-
-
-	const title = req.body.title.trim();
-	const detail = req.body.detail.trim();
-	const { subject, date, time } = req.body;
+app.post('/homeworks', auth, (req, res) => {
+	const { title, detail, subject, dueDate } = req.body;
 
 	if (!title || !subject) {
-		res.status(400).send('Malformed form data: missing field(s)');
+		res.status(400).send('Malformed data: missing field(s)');
 		return;
 	}
 
-	try {
-		const decoded = jwt.verify(req.params.token, ConfigManager.web.jwt_secret) as jwt.JwtPayload;
-		const channel = bot.channels.resolve(decoded.channel);
+	const hw: QueryDeepPartialEntity<Homework> = {
+		title: title,
+		subID: subject,
+		detail: detail,
+		dueDate: dueDate,
+		author: req['user_id'],
+		guild: 'GLOBAL'
+	};
 
-		const hw = {
-			name: title,
-			subID: subject,
-			detail: detail,
-			dueDate: date,
-			dueTime: time,
-			author: decoded.issuer.id,
-			guild: decoded.isLocal ? decoded.guild : 'GLOBAL'
-		};
-
-		// Copied from Logic.ts ... I have reasons not to implement this as a function
-		HomeworkRepository.insert(hw).then(async result => {
-			if (!channel.isText()) return;
-			channel.send({
-				embeds: [{
-					author: { name: `${decoded.issuer.username}#${decoded.issuer.discriminator}`, iconURL: decoded.issuer.avatarURL },
-					title: `<:checkmark:849685283459825714> Creation Successful ${decoded.isLocal ? '(LOCAL MODE)' : ''}`,
-					description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${subjects.filter(s => s.subID == subject)[0].name} (${subject})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${date ? `**Date**: ${moment(date).format('LL')}\n` : ''}${time ? `**Time**: ${time}` : ''}`,
-					color: ConfigManager.color.green
-				}],
-				components: []
-			});
-			const id = result.identifiers[0].id;
-			if (!decoded.isLocal) {
-				const hw = await HomeworkRepository.findOne(id);
-				scheduleDeleteJobs(hw);
-			}
-		});
-		res.redirect(ConfigManager.web.endpoint + '/add/success');
-	} catch (err) {
-		res.status(500).send(`an error occured, please report this back to omsin: \n${err}`);
-	}
-
+	HomeworkRepository.insert(hw).then(async result => {
+		const id = result.identifiers[0].id;
+		const hw = await HomeworkRepository.findOne(id);
+		if (hw.dueDate) scheduleDeleteJobs(hw);
+		return res.sendStatus(201);
+	});
 });
 
-// Page not found
-app.use(function (req, res, next) {
-	res.status(404);
-	if (req.accepts('html')) {
-		res.render('404', { endpoint: ConfigManager.web.endpoint });
-		return;
+app.delete('/homeworks/:id', auth, async (req, res) => {
+	if (isNaN(+req.params.id)) return res.status(400).send('id must be a number');
+	const id = +req.params.id;
+	const hw = await HomeworkRepository.findOne({ id: id });
+	if (!hw) res.sendStatus(404);
+	else {
+		await HomeworkRepository.delete(hw.id);
+		logger.debug(`deleted ${id}`);
+		res.status(200).send('deleted');
+		if (deleteJobs.has(hw.id)) {
+			deleteJobs.get(hw.id).cancel();
+			remind1dJobs.get(hw.id).cancel();
+			remind1hJobs.get(hw.id).cancel();
+			remind10mJobs.get(hw.id).cancel();
+			remind5mJobs.get(hw.id).cancel();
+			deleteJobs.delete(hw.id);
+			remind1dJobs.delete(hw.id);
+			remind1hJobs.delete(hw.id);
+			remind10mJobs.delete(hw.id);
+			remind5mJobs.delete(hw.id);
+		}
 	}
-	if (req.accepts('json')) {
-		res.json({ error: 'Not found' });
-		return;
-	}
-	res.type('txt').send('Not found');
 });
 
 const port = process.env.PORT ?? ConfigManager.web.port;
-app.listen(port, () => logger.info(`Listening on port ${port}`));
+export function listenAPI() {
+	app.listen(port, () => logger.info(`Listening on port ${port}`));
+}
