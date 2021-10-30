@@ -22,7 +22,7 @@ async function connectMySQL() {
 			"username": ConfigManager.mysql.username,
 			"password": ConfigManager.mysql.password,
 			"database": ConfigManager.mysql.dbname,
-			"synchronize": false,
+			"synchronize": true,
 			"logging": false,
 			"charset": "utf8mb4",
 			"entities": [Homework_Default, GuildData, WebData],

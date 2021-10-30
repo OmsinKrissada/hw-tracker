@@ -88,7 +88,7 @@ async function isAllowedAccess(user_id: string) {
 		setTimeout(() => {
 			access_cache.delete(user_id);
 			logger.debug(`removed access cache for ${user_id}`);
-		}, 60000);
+		}, 300000);
 		return true;
 	}
 	return false;
@@ -178,6 +178,8 @@ app.post('/homeworks', auth, (req, res) => {
 		res.status(400).send('Malformed data: missing field(s)');
 		return;
 	}
+
+	console.log(dueDate);
 
 	const hw: QueryDeepPartialEntity<Homework> = {
 		title: title,
