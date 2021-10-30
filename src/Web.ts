@@ -146,7 +146,7 @@ app.post('/auth/discord', async (req, res) => {
 
 	if (await isAllowedAccess(user.id)) {
 		// 	// const avatarURL = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=1024`;
-		const jwt_token = jwt.sign({ user_id: user.id }, ConfigManager.web.jwt_secret, { expiresIn: '1h' });
+		const jwt_token = jwt.sign({ user_id: user.id }, ConfigManager.web.jwt_secret, { expiresIn: '1y' });
 		return res.send({ access_token: jwt_token });
 	} else {
 		return res.status(403).send(`user must share server with the bot`);
