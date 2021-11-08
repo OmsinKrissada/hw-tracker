@@ -25,6 +25,7 @@ import { IsNull, Not } from 'typeorm';
 import { appendTime, Subject } from './Helper';
 import { Homework } from './models/Homework';
 import { listenAPI } from './Web';
+import { execSync } from 'child_process';
 
 if (ConfigManager.web.enable) import('./Web');
 
@@ -75,7 +76,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 	}).then(msg => {
 		setTimeout(() => {
 			msg.delete();
-		}, 3600000 * length);
+		}, 2400000 * length);
 	});
 }
 
@@ -156,7 +157,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			content: `Time's up! <@&${ConfigManager.subscriber_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
-				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
+				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
 				footer: { text: `Added by ${bot.users.resolve(hw.author).tag}` }
 			}]
@@ -274,12 +275,14 @@ bot.on('interactionCreate', async interaction => {
 				interaction.reply({
 					embeds: [{
 						title: `Homework Menu ${useLocal ? '(LOCAL MODE)' : ''}`,
-						description: `Thank you for using my homework bot! 😄\nHere is the navigation menu. 👇\n\n` +
+						description: `Thank you for using my homework bot! 😄\n\n` +
+							`📰 **NEW!** Web Dashboard\n\n` +
 							`📕 <:join_arrow:845520716715917314> < 1 วัน\n` +
 							`📙 <:join_arrow:845520716715917314> ≤ 3 วัน\n` +
 							`📗 <:join_arrow:845520716715917314> > 3 วัน\n` +
 							`📘 <:join_arrow:845520716715917314> ไม่ได้ระบุวันส่ง\n\n` +
-							`The new website is available!!!\nGo check it out using the button below. 👈`,
+							`<:github_white:880034279990640680> [**Source code**](https://github.com/OmsinKrissada/hw-tracker/)`,
+						footer: { text: `Commit — ${execSync('git rev-parse HEAD').toString().slice(0, 7)}` },
 						color: ConfigManager.color.blue,
 					}],
 					components: [{
@@ -296,32 +299,21 @@ bot.on('interactionCreate', async interaction => {
 							emoji: '✨',
 							style: 'LINK',
 							url: 'https://omsinkrissada.sytes.net/homework/dashboard#creation-form'
-						}
-							// {
-							// 	type: 'BUTTON',
-							// 	label: '➕ Add',
-							// 	style: 'LINK',
-							// 	url: `https://omsinkrissada.sytes.net/homework/dashboard#creation-form`
-							// },
-							// {
-							// 	type: 'BUTTON',
-							// 	label: '➖ Remove',
-							// 	style: 'SECONDARY',
-							// 	customId: 'hw_remove'
-							// 	}
-						]
-					}, {
-						type: 'ACTION_ROW',
-						components: [
+						}]
+					},
+						// {
+						// type: 'ACTION_ROW',
+						// components: [
 
-							{
-								type: 'BUTTON',
-								label: 'GitHub',
-								emoji: '<:github_white:880034279990640680>',
-								style: 'LINK',
-								url: 'https://github.com/OmsinKrissada/hw-tracker/'
-							},]
-					}]
+						// 	{
+						// 		type: 'BUTTON',
+						// 		label: 'GitHub',
+						// 		emoji: '<:github_white:880034279990640680>',
+						// 		style: 'LINK',
+						// 		url: 'https://github.com/OmsinKrissada/hw-tracker/'
+						// 	},]
+						// }
+					]
 				});
 				break;
 			}

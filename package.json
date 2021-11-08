@@ -6,9 +6,8 @@
 	"scripts": {
 		"start": "node ./dist/Main.js",
 		"dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"npx ts-node src/Main.ts\"",
-		"build": "npm run clean && tsc && npm run copy",
-		"clean": "rimraf dist",
-		"copy": "ncp src/views dist/views && ncp src/assets dist/assets"
+		"build": "npm run clean && tsc",
+		"clean": "rimraf dist"
 	},
 	"keywords": [],
 	"author": "",

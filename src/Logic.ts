@@ -117,8 +117,8 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		};
 		return `-------------------------------------------\n` +
 			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.title}**${showID ? ` | \`${hw.id}\`` : ''}\n\n` +
-			` ${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}` +
-			` **Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
+			`${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}` +
+			`**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}` +
 			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `\n\n**Due**: __${moment(hw.dueDate).calendar(format)}__ **(${moment(hw.dueDate).fromNow(true)})** ⏰` : ''}`;
 	}), 1050);
 	const pages = condensed.map((c): MessageOptions => { return { embeds: [{ title: `📚 Homework List ${useLocal ? '(LOCAL MODE)' : ''}`, description: c }] }; });
@@ -146,38 +146,6 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 export const add = async (interaction: ConsideringInteraction) => {
 	if (interaction.isCommand())
 		interaction.reply({ content: 'Please visit https://omsinkrissada.sytes.net/homework/dashboard#creation-form', ephemeral: true });
-
-
-	// Insert to database
-	// if (isCanceled) return;
-	// HomeworkRepository.insert({ name: title, subID: sub.subID, detail: detail, dueDate: dueDate, dueTime: dueTime, author: user.id, guild: useLocal ? interaction.guild.id : 'GLOBAL' }).then(async result => {
-	// 	editPrompt({
-	// 		embeds: [{
-	// 			title: `<:checkmark:849685283459825714> Creation Successful ${useLocal ? '(LOCAL MODE)' : ''}`,
-	// 			description: `**หัวข้อการบ้าน**: "${title}"\n**วิชา**: "${sub.name} (${sub.subID})"\n${detail ? `**ข้อมูลเพิ่มเติม**: ${detail}\n` : ''}${dueDate ? `**Date**: ${moment(dueDate).format('LL')}\n` : ''}${dueTime ? `**Time**: ${dueTime}` : ''}`,
-	// 			color: ConfigManager.color.green
-	// 		}],
-	// 		components: []
-	// 	});
-	// 	const id = result.identifiers[0].id;
-	// 	if (!useLocal) {
-	// 		const hw = await HomeworkRepository.findOne(id);
-	// 		scheduleDeleteJobs(hw);
-	// 	}
-	// });
-
-	/*
-	refmsg.edit(new MessageEmbed({
-		title: 'Homework Creation Session',
-		description: `หัวข้อการบ้าน: "${title}"\nวิชา:"${sub.name} (${sub.subID})"\nข้อมูลเพิ่มเติม:"${description}" \n\n**กรุณาใส่ __วันส่ง__ ลงในแชท**`,
-		color: ConfigManager.color.blue
-	}))
-	await channel.awaitMessages(m => m.author.id == msg.author.id, { maxProcessed: 1 }).then(_m => {
-		const m = _m.first();
-		// subID = m.content;
-		if (m.deletable) m.delete();
-	})
-	*/
 };
 
 export const remove = async (interaction: ConsideringInteraction, id: number) => {

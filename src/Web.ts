@@ -170,7 +170,7 @@ app.get('/subjects', auth, async (req, res) => {
 	res.send(subjects);
 });
 
-// on form submit
+// on form submit (add)
 app.post('/homeworks', auth, (req, res) => {
 	const { title, detail, subject, dueDate } = req.body;
 
@@ -198,6 +198,7 @@ app.post('/homeworks', auth, (req, res) => {
 	});
 });
 
+// on delete
 app.delete('/homeworks/:id', auth, async (req, res) => {
 	if (isNaN(+req.params.id)) return res.status(400).send('id must be a number');
 	const id = +req.params.id;
