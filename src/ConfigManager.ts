@@ -22,7 +22,8 @@ interface ConfigOption {
 	readonly remind5m: boolean;
 	readonly guildId: `${bigint}`;
 	readonly channelId: `${bigint}`;
-	readonly subscriber_role: `${bigint}`;
+	readonly timetable_role: `${bigint}`;
+	readonly hw_role: `${bigint}`;
 	readonly source_link: string;
 	readonly database: 'mysql' | 'sqlite' | 'postgres';
 	readonly mysql: {

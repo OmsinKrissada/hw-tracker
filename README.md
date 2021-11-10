@@ -35,7 +35,8 @@ guildId: "guild id here"
 channelId: "channel id here"
 
 # The bot will mention this role for each reminder. **Do not remove quote symbol
-subscriber_role: "role id here"
+timetable_role: "role id here"
+hw_role: "role id here"
 
 # GitHub link
 source_link: https://github.com/OmsinKrissada/hw-tracker
@@ -74,7 +75,7 @@ web:
     enable: false
     # Port is overridden if $PORT env variable is defined
     port: 8080
-    endpoint: http://127.0.0.1:8080
+    redirect_uri: http://127.0.0.1:8080
     jwt_secret: a_jwt_secret
 
 update_commands: true

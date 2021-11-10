@@ -71,7 +71,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	announce_channel.send({
-		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.subscriber_role}>`,
+		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
 		embeds: [embed]
 	}).then(msg => {
 		setTimeout(() => {
@@ -98,7 +98,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		if (!ConfigManager.remind1d) return;
 		logger.debug(`Remind 1 day ${hw.id}`);
 		announce_channel.send({
-			content: `1 day left before deadline <@&${ConfigManager.subscriber_role}>`,
+			content: `1 day left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 DAY LEFT__ For',
 				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
@@ -112,7 +112,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		if (!ConfigManager.remind1hr) return;
 		logger.debug(`Remind 1 hour ${hw.id}`);
 		announce_channel.send({
-			content: `1 hour left before deadline <@&${ConfigManager.subscriber_role}>`,
+			content: `1 hour left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 HOUR LEFT__ For',
 				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
@@ -126,7 +126,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		if (!ConfigManager.remind10m) return;
 		logger.debug(`Remind 10 mins ${hw.id}`);
 		announce_channel.send({
-			content: `10 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
+			content: `10 mins left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __10 MINS LEFT__ For',
 				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
@@ -140,7 +140,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		if (!ConfigManager.remind5m) return;
 		logger.debug(`Remind 5 mins ${hw.id}`);
 		announce_channel.send({
-			content: `5 mins left before deadline <@&${ConfigManager.subscriber_role}>`,
+			content: `5 mins left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __5 MINS LEFT__ For',
 				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
@@ -154,7 +154,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 		HomeworkRepository.softDelete(hw.id);
 		logger.debug(`Auto-deleted ${hw.id}`);
 		announce_channel.send({
-			content: `Time's up! <@&${ConfigManager.subscriber_role}>`,
+			content: `Time's up! <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
 				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
