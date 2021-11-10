@@ -32,7 +32,8 @@ if (ConfigManager.web.enable) import('./Web');
 export const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
 let announce_guild: Guild;
-export let announce_channel: TextChannel;
+export let timetable_channel: TextChannel;
+export let hw_channel: TextChannel;
 
 const periods_begin: { [key: string]: string; } = {
 	'1': '8:30',
@@ -70,7 +71,7 @@ async function announce(subject: typeof subjects[0], period: string, length: num
 		color: ConfigManager.color.aqua,
 	});
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
-	announce_channel.send({
+	timetable_channel.send({
 		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
 		embeds: [embed]
 	}).then(msg => {
@@ -84,7 +85,7 @@ async function announce_upcoming(subject: typeof subjects[0]) {
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
 	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`);
-	announce_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
+	timetable_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
 		setTimeout(() => {
 			msg.delete();
 		}, 300000);
@@ -97,7 +98,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind1dJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'd').toDate(), () => {
 		if (!ConfigManager.remind1d) return;
 		logger.debug(`Remind 1 day ${hw.id}`);
-		announce_channel.send({
+		hw_channel.send({
 			content: `1 day left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 DAY LEFT__ For',
@@ -111,7 +112,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
 		if (!ConfigManager.remind1hr) return;
 		logger.debug(`Remind 1 hour ${hw.id}`);
-		announce_channel.send({
+		hw_channel.send({
 			content: `1 hour left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __1 HOUR LEFT__ For',
@@ -125,7 +126,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind10mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(10, 'm').toDate(), () => {
 		if (!ConfigManager.remind10m) return;
 		logger.debug(`Remind 10 mins ${hw.id}`);
-		announce_channel.send({
+		hw_channel.send({
 			content: `10 mins left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __10 MINS LEFT__ For',
@@ -139,7 +140,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
 		if (!ConfigManager.remind5m) return;
 		logger.debug(`Remind 5 mins ${hw.id}`);
-		announce_channel.send({
+		hw_channel.send({
 			content: `5 mins left before deadline <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: 'REMINDER! - __5 MINS LEFT__ For',
@@ -153,7 +154,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	const deleteJob = schedule.scheduleJob(hw.dueDate, () => {
 		HomeworkRepository.softDelete(hw.id);
 		logger.debug(`Auto-deleted ${hw.id}`);
-		announce_channel.send({
+		hw_channel.send({
 			content: `Time's up! <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
@@ -183,7 +184,8 @@ bot.once('ready', async () => {
 	bot.user.setPresence({ activities: [{ name: `/hw`, type: 'LISTENING' }] });
 
 	announce_guild = await bot.guilds.fetch(ConfigManager.guildId);
-	announce_channel = announce_guild.channels.resolve(ConfigManager.channelId) as TextChannel;
+	timetable_channel = announce_guild.channels.resolve(ConfigManager.timetableChannelId) as TextChannel;
+	hw_channel = announce_guild.channels.resolve(ConfigManager.hwChannelId) as TextChannel;
 
 	// Register class start notification from subject.json
 	if (!ConfigManager.pause_announce) {

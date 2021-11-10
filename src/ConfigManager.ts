@@ -21,7 +21,8 @@ interface ConfigOption {
 	readonly remind10m: boolean;
 	readonly remind5m: boolean;
 	readonly guildId: `${bigint}`;
-	readonly channelId: `${bigint}`;
+	readonly timetableChannelId: `${bigint}`;
+	readonly hwChannelId: `${bigint}`;
 	readonly timetable_role: `${bigint}`;
 	readonly hw_role: `${bigint}`;
 	readonly source_link: string;
