@@ -59,29 +59,49 @@ moment.locale('en');
 moment.tz.setDefault('Asia/Bangkok');
 
 
-
-async function announce(subject: typeof subjects[0], period: string, length: number) {
+let previous_announce: Message;
+function announce(subject: typeof subjects[0], current_class: string) {
+	if (previous_announce) previous_announce.delete();
+	previous_announce = null;
+	const [DoW, period, _length] = current_class.split(' ');
+	const length = _length ? +_length : 1;
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
 
 
 	const embed = new MessageEmbed({
-		title: `${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
-		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} น. - ${periods_end[+period + length - 1]} น.)\n\n${link}`,
+		title: `<:join_arrow:845520716715917314>  ${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
+		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} น. - ${periods_end[+period + length - 1]} น.)\n\n`,
 		color: ConfigManager.color.aqua,
 	});
+	const next_subject = subjects.filter(s => s.classes.some(c => c.startsWith(`${DoW} ${+period + length}`)))[0];
+	if (next_subject) {
+		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+period + 1]} น. - ${periods_end[+period + length]} น.)`);
+	}
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	timetable_channel.send({
 		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
 		embeds: [embed]
 	}).then(msg => {
+		previous_announce = msg;
 		setTimeout(() => {
-			msg.delete();
-		}, 2400000 * length);
+			if (next_subject) {
+				const late_embed = new MessageEmbed({
+					title: '<:idle:845520741315510284>  BREAK TIME',
+					color: ConfigManager.color.aqua,
+					fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods_begin[+period + 1]} น. - ${periods_end[+period + length]} น.)` }]
+				});
+				msg.edit({
+					embeds: [late_embed]
+				});
+			} else {
+				msg.delete();
+			}
+			}, 2400000 * length);
 	});
 }
 
-async function announce_upcoming(subject: typeof subjects[0]) {
+function announce_upcoming(subject: typeof subjects[0]) {
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
 	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`);
@@ -193,10 +213,9 @@ bot.once('ready', async () => {
 		subjects.forEach(subject => {
 			subject.classes.forEach(c => {
 				const [DoW, period, l] = c.split(' ');
-				const length = l ? +l : 1;
 				const [hour, min] = periods_begin[period].split(':');
 				schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
-					announce(subject, period, length);
+					announce(subject, c);
 				});
 				schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
 					announce_upcoming(subject);
