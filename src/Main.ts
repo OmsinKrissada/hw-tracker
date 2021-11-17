@@ -81,7 +81,7 @@ function announce(subject: typeof subjects[0], current_class: string) {
 		return c.startsWith(`${DoW} ${+period + length}`);
 	}))[0];
 	if (next_subject) {
-		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+period + length - 1]} - ${periods_end[+period + length - 1 + next_length]} น.)`);
+		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+period + length]} - ${periods_end[+period + length + next_length]} น.)`);
 	}
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	timetable_channel.send({
