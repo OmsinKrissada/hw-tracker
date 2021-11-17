@@ -71,12 +71,17 @@ function announce(subject: typeof subjects[0], current_class: string) {
 
 	const embed = new MessageEmbed({
 		title: `<:join_arrow:845520716715917314>  ${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
-		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} น. - ${periods_end[+period + length - 1]} น.)\n\n`,
+		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} - ${periods_end[+period + length - 1]} น.)\n\n`,
 		color: ConfigManager.color.aqua,
 	});
-	const next_subject = subjects.filter(s => s.classes.some(c => c.startsWith(`${DoW} ${+period + length}`)))[0];
+	let next_length: number;
+	const next_subject = subjects.filter(s => s.classes.some(c => {
+		const [DoW, period, _next_length] = c;
+		next_length = +_next_length;
+		return c.startsWith(`${DoW} ${+period + length}`);
+	}))[0];
 	if (next_subject) {
-		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+period + 1]} น. - ${periods_end[+period + length]} น.)`);
+		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+period + length - 1]} - ${periods_end[+period + length - 1 + next_length]} น.)`);
 	}
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	timetable_channel.send({
@@ -89,7 +94,7 @@ function announce(subject: typeof subjects[0], current_class: string) {
 				const late_embed = new MessageEmbed({
 					title: '<:idle:845520741315510284>  BREAK TIME',
 					color: ConfigManager.color.aqua,
-					fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods_begin[+period + 1]} น. - ${periods_end[+period + length]} น.)` }]
+					fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods_begin[+period + length - 1]} - ${periods_end[+period + length - 1 + next_length]} น.)` }]
 				});
 				msg.edit({
 					embeds: [late_embed]
@@ -97,7 +102,7 @@ function announce(subject: typeof subjects[0], current_class: string) {
 			} else {
 				msg.delete();
 			}
-			}, 2400000 * length);
+		}, 2400000 * length);
 	});
 }
 
