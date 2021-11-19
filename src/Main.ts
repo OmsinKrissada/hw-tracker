@@ -64,7 +64,7 @@ function announce(subject: typeof subjects[0], current_class: string) {
 	if (previous_announce) previous_announce.delete();
 	previous_announce = null;
 	const [DoW, period, _length] = current_class.split(' ');
-	const length = _length ? +_length : 1;
+	const length = +_length || 1;
 	let link = '';
 	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
 
@@ -74,14 +74,14 @@ function announce(subject: typeof subjects[0], current_class: string) {
 		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} - ${periods_end[+period + length - 1]} น.)\n\n`,
 		color: ConfigManager.color.aqua,
 	});
-	let next_length: number;
+	let next_class: string[];
 	const next_subject = subjects.filter(s => s.classes.some(c => {
-		const [_next_DoW, _next_period, _next_length] = c;
-		next_length = +_next_length ?? 1;
 		return c.startsWith(`${DoW} ${+period + length}`);
 	}))[0];
+	const [_next_DoW, next_period, _next_length] = next_class;
+	const next_length = +_next_length || 1;
 	if (next_subject) {
-		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+period + length]} - ${periods_end[+period + length + next_length]} น.)`);
+		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)`);
 	}
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	timetable_channel.send({
