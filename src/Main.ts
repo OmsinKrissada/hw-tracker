@@ -74,11 +74,11 @@ function announce(subject: typeof subjects[0], current_class: string) {
 		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} - ${periods_end[+period + length - 1]} น.)\n\n`,
 		color: ConfigManager.color.aqua,
 	});
-	let next_class: string[];
+	let next_class: string;
 	const next_subject = subjects.filter(s => s.classes.some(c => {
 		return c.startsWith(`${DoW} ${+period + length}`);
 	}))[0];
-	const [_next_DoW, next_period, _next_length] = next_class;
+	const [_next_DoW, next_period, _next_length] = next_class.split(' ');
 	const next_length = +_next_length || 1;
 	if (next_subject) {
 		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)`);
@@ -94,7 +94,7 @@ function announce(subject: typeof subjects[0], current_class: string) {
 				const late_embed = new MessageEmbed({
 					title: '<:idle:845520741315510284>  BREAK TIME',
 					color: ConfigManager.color.aqua,
-					fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods_begin[+period + length - 1]} - ${periods_end[+period + length - 1 + next_length]} น.)` }]
+					fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)` }]
 				});
 				msg.edit({
 					embeds: [late_embed]
