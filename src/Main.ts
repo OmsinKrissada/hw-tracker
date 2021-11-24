@@ -76,6 +76,7 @@ function announce(subject: typeof subjects[0], current_class: string) {
 	});
 	let next_class: string;
 	const next_subject = subjects.filter(s => s.classes.some(c => {
+		next_class = c;
 		return c.startsWith(`${DoW} ${+period + length}`);
 	}))[0];
 	const [_next_DoW, next_period, _next_length] = next_class.split(' ');
