@@ -74,13 +74,12 @@ function announce(subject: typeof subjects[0], current_class: string) {
 		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} - ${periods_end[+period + length - 1]} น.)\n\n`,
 		color: ConfigManager.color.aqua,
 	});
-	let next_class: string;
 	const next_subject = subjects.filter(s => s.classes.some(c => {
-		next_class = c;
 		return c.startsWith(`${DoW} ${+period + length}`);
 	}))[0];
-	const [_next_DoW, next_period, _next_length] = next_class.split(' ');
+	const [_next_DoW, next_period, _next_length] = next_subject.classes.filter(c => c.startsWith(`${DoW} ${+period + length}`))[0].split(' ');
 	const next_length = +_next_length || 1;
+
 	if (next_subject) {
 		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)`);
 	}
