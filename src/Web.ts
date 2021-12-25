@@ -19,11 +19,11 @@ const app = express();
 // CORS
 app.use((req, res, next) => {
 	const origin = req.get('origin');
-	const allowedOrigins = ['https://omsinkrissada.sytes.net', 'http://192.168.1.39:8080',];
+	const allowedOrigins = ['https://omsinkrissada.sytes.net', 'http://192.168.1.39:8080', 'https://homework.krissada.com'];
 	if (allowedOrigins.includes(origin)) {
 		cors({ origin: origin })(req, res, next);
 	} else {
-		cors({ origin: 'https://omsinkrissada.sytes.net' })(req, res, next);
+		cors({ origin: 'https://homework.krissada.com' })(req, res, next);
 	}
 });
 

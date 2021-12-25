@@ -324,7 +324,7 @@ bot.on('interactionCreate', async interaction => {
 							label: 'Web Dashboard',
 							emoji: '✨',
 							style: 'LINK',
-							url: 'https://omsinkrissada.sytes.net/homework/dashboard#creation-form'
+							url: 'https://homework.krissada.com/dashboard#creation-form'
 						}]
 					},
 						// {
