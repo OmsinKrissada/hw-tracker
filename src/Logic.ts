@@ -1,14 +1,12 @@
 import { ButtonInteraction, CommandInteraction, InteractionUpdateOptions, Message, MessageEmbedOptions, MessageOptions, MessagePayload, TextChannel, User, WebhookEditMessageOptions } from 'discord.js';
 import moment from 'moment-timezone';
-import fs from 'fs';
 
-import { appendTime, condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
-import { deleteJobs, remind10mJobs, remind1dJobs, remind1hJobs, remind5mJobs, scheduleDeleteJobs, subjects } from './Main';
+import { condenseArrayByLengthLimit, confirm_type, sendPage } from './Helper';
+import { deleteJobs, remind10mJobs, remind1dJobs, remind1hJobs, remind5mJobs, subjects } from './Main';
 import { GuildDataRepository, HomeworkRepository } from './DBManager';
 import { Homework } from './models/Homework';
 import { logger } from './Logger';
 import ConfigManager from './ConfigManager';
-import { SelectQueryBuilder } from 'typeorm';
 
 async function getSubjectFromName(partialName: string, caller: User, channel: TextChannel) {
 	let matched: typeof subjects = [];

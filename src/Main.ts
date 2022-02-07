@@ -16,13 +16,12 @@ export const subjects = function () {
 import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, MessageEmbedOptions, TextChannel } from 'discord.js';
 import schedule from 'node-schedule';
 import moment from 'moment-timezone';
-import jwt from 'jsonwebtoken';
 
 import * as Tracker from './Logic';
 import ConfigManager from './ConfigManager';
 import { connectDB, GuildDataRepository, HomeworkRepository } from './DBManager';
 import { IsNull, Not } from 'typeorm';
-import { appendTime, Subject } from './Helper';
+import { Subject } from './Helper';
 import { Homework } from './models/Homework';
 import { listenAPI } from './Web';
 import { execSync } from 'child_process';
@@ -77,12 +76,15 @@ function announce(subject: typeof subjects[0], current_class: string) {
 	const next_subject = subjects.filter(s => s.classes.some(c => {
 		return c.startsWith(`${DoW} ${+period + length}`);
 	}))[0];
-	const [_next_DoW, next_period, _next_length] = next_subject.classes.filter(c => c.startsWith(`${DoW} ${+period + length}`))[0].split(' ');
-	const next_length = +_next_length || 1;
 
+	let next_period: string, next_length: number;
 	if (next_subject) {
+		const [_next_DoW, _next_period, _next_length] = next_subject.classes.filter(c => c.startsWith(`${DoW} ${+period + length}`))[0].split(' ');
+		next_period = _next_period;
+		next_length = +_next_length || 1;
 		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)`);
 	}
+
 	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
 	timetable_channel.send({
 		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
@@ -176,7 +178,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 			if (!msg.deleted && msg.deletable) msg.delete();
 		}, 5 * 60 * 1000));
 	});
-	const deleteJob = schedule.scheduleJob(hw.dueDate, () => {
+	const deleteJob = schedule.scheduleJob(hw.dueDate, async () => {
 		HomeworkRepository.softDelete(hw.id);
 		logger.debug(`Auto-deleted ${hw.id}`);
 		hw_channel.send({
@@ -185,7 +187,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 				title: '⏰ DEADLINE HIT',
 				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
-				footer: { text: `Added by ${bot.users.resolve(hw.author).tag}` }
+				footer: { text: `Added by ${(await bot.users.fetch(hw.author))?.tag ?? hw.author}` }
 			}]
 		});
 	});

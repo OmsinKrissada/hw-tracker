@@ -1,5 +1,4 @@
 import express, { RequestHandler } from 'express';
-import path from 'path';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import moment from 'moment';
