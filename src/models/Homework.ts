@@ -12,7 +12,7 @@ export class Homework_Default {
 	@Column()
 	title: string;
 
-	@Column({ nullable: true })
+	@Column({ length: 300, nullable: true })
 	detail: string;
 
 	@Column({ nullable: true, precision: 3 })
