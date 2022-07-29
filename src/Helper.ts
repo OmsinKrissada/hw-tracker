@@ -1,4 +1,4 @@
-import { TextChannel, MessageEmbed, User, Message, MessageOptions, SelectMenuInteraction, TextBasedChannels, MessageButtonOptions } from "discord.js";
+import { TextChannel, MessageEmbed, User, Message, MessageOptions, SelectMenuInteraction, TextBasedChannel, MessageButtonOptions, MessageActionRow, MessageActionRowComponent, MessageActionRowComponentOptions } from "discord.js";
 import ConfigManager from "./ConfigManager";
 import { logger } from "./Logger";
 
@@ -27,7 +27,7 @@ export function condenseArrayByLengthLimit(list: string[], limit: number, separa
 }
 
 
-export async function sendPage(options: { textChannel: TextBasedChannels, pages?: MessageOptions[], appendPageNumber?: boolean, preMessage?: Message; }) {
+export async function sendPage(options: { textChannel: TextBasedChannel, pages?: MessageOptions[], appendPageNumber?: boolean, preMessage?: Message; }) {
 	const { textChannel, pages, appendPageNumber, preMessage } = options;
 
 	// if (value.length == 0) value.push('*Empty*');
@@ -36,7 +36,7 @@ export async function sendPage(options: { textChannel: TextBasedChannels, pages?
 		let pagenum = 1;
 		pages.forEach(page => {
 			try {
-				page.embeds[0].footer = { text: page.embeds[0].footer?.text ?? '' + `\nPage ${pagenum++} / ${pages.length}`, iconURL: page.embeds[0].footer?.iconURL };
+				page.embeds[0].footer = { text: page.embeds[0].footer?.text ?? '' + `\nPage ${pagenum++} / ${pages.length}` }; // icon_url was here
 			} catch (err) {
 				logger.warn('Please make sure to provide an embed. ' + err);
 			}
@@ -44,7 +44,7 @@ export async function sendPage(options: { textChannel: TextBasedChannels, pages?
 	}
 
 	let current_page = 1;
-	const page_components: MessageButtonOptions[] = [];
+	const page_components: MessageActionRowComponentOptions[] = [];
 
 	if (pages.length > 1) {
 		if (pages.length > 2) page_components.push({
@@ -82,14 +82,15 @@ export async function sendPage(options: { textChannel: TextBasedChannels, pages?
 		});
 	}
 
-	pages[0].components = page_components.length > 1 ? [{
-		type: 'ACTION_ROW',
-		components: page_components
-	}] : [];
+	pages[0].components = page_components.length > 1 ?
+		[new MessageActionRow({
+			type: 'ACTION_ROW',
+			components: page_components,
+		})] : [];
 	let message: Message;
 	if (preMessage) {
 		message = preMessage;
-		message.edit(pages[0]);
+		message.edit({ embeds: pages[0].embeds, components: pages[0].components });
 	} else {
 		message = await textChannel.send(pages[0]);
 	}
@@ -187,11 +188,11 @@ export async function sendPage(options: { textChannel: TextBasedChannels, pages?
 			if (next_index != -1) page_components[next_index].disabled = false;
 			if (last_index != -1) page_components[last_index].disabled = false;
 		}
-		pages[current_page - 1].components = page_components.length > 1 ? [{
+		pages[current_page - 1].components = page_components.length > 1 ? [new MessageActionRow({
 			type: 1,
 			components: page_components
-		}] : [];
-		message.edit(pages[current_page - 1]);
+		})] : [];
+		message.edit({ embeds: pages[current_page - 1].embeds, components: pages[current_page - 1].components });
 		if (!interaction?.deferred && !interaction?.replied) interaction.deferUpdate();
 	});
 	collector.on('end', () => {
@@ -256,16 +257,26 @@ export async function confirm_type<T extends Object>(title: string, list: T[], c
 	}
 }
 
-export function appendTime(date: Date, time: string) {
+export function appendTimeToDate(date: Date, time: string) {
 	if (!time.match(/\d{1,2}:\d{1,2}/g)) throw (`Invalid time string format, provided ${time}`);
 	const [hours, mins] = time.split(':');
 	date.setHours(+hours, +mins);
 	return date;
 }
 
-export interface Subject {
+export interface SubjectType {
 	name: string;
 	subID: string;
-	msteam: string;
-	classes: string[];
+	classes: {
+		DoW: number;
+		period: number;
+		span: number;
+	}[];
 };
+
+export function includeDeletedCondition(includeDeleted: boolean): ({ not: null; } | null) {
+	if (includeDeleted)
+		return { not: null };
+	else
+		return null;
+}

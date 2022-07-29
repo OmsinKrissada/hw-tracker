@@ -1,52 +1,45 @@
 import winston from 'winston';
-import chalk from 'chalk';
 import fs from 'fs';
-import linereader from 'n-readlines';
+import { createGzip } from 'zlib';
 
-// Checks if file directory exists, if not, creates them.
+// Checks if file directory exists, if not, create them.
 if (!fs.existsSync('./logs')) {
 	fs.mkdirSync('./logs');
 }
 
-// renames latest.log to its appropriate name
+// Renames latest.log to its datetime name, then compressses it.
 if (fs.existsSync('./logs/latest.log')) {
-	const reader = new linereader('./logs/latest.log');
-	const filename = './logs/' + reader.next().toString().substr(2) + '.log';
-	if (reader.next())
-		fs.renameSync('./logs/latest.log', filename.replace(/:/g, '-'));
-	else fs.rmSync('./logs/latest.log');
+	const newFilename = `./logs/${fs.statSync('./logs/latest.log').ctime.toISOString().replace(/:/g, '_')}.log`;
+	fs.renameSync('./logs/latest.log', newFilename);
+	const gzip = createGzip();
+	fs.createReadStream(newFilename).pipe(gzip).pipe(fs.createWriteStream(newFilename + '.gz')).once('finish', () => fs.rmSync(newFilename));
 }
-
-
-var logfile = fs.createWriteStream(`./logs/latest.log`, { encoding: 'utf-8' });
-
-
-logfile.write('# ' + new Date().toISOString() + '\n');
 
 class LoggerClass {
 	private readonly internal_logger: winston.Logger;
 
 	constructor() {
-		const coloredLevelString = (level: string) => {
-			if (level == 'info') return chalk.greenBright('INFO');
-			if (level == 'warn') return chalk.yellowBright('WARN');
-			if (level == 'error') return chalk.redBright('ERROR');
-			if (level == 'debug') return chalk.cyanBright('DEBUG');
-			return level;
-		};
+		// const coloredLevelString = (level: string) => {
+		// 	if (level == 'info') return 'INFO';
+		// 	if (level == 'warn') return 'WARN';
+		// 	if (level == 'error') return 'ERROR';
+		// 	if (level == 'debug') return 'DEBUG';
+		// 	return level;
+		// };
 		const console_format = winston.format.combine(
+			winston.format.colorize(),
 			winston.format.timestamp({
 				format: "HH:mm:ss"
 			}),
 			winston.format.printf(
-				log => chalk`${coloredLevelString(log.level)} {grey ${log.timestamp}} {white ${(log.message)}}`
+				log => `${log.level} ${(log.message)}`
 			));
 		const file_format = winston.format.combine(
 			winston.format.timestamp({
 				format: "isoDateTime",
 			}),
 			winston.format.printf(
-				log => `${log.level.toUpperCase()} ${log.timestamp} ${(log.message)}`.replace(/\[\d\dm/g, '')
+				log => `${log.timestamp} ${log.level.toUpperCase()} ${(log.message)}`
 			));
 
 		this.internal_logger = winston.createLogger({
@@ -54,7 +47,7 @@ class LoggerClass {
 				new winston.transports.Console({ level: 'debug', format: console_format, handleExceptions: true }),
 				new winston.transports.File({ level: 'debug', filename: './logs/latest.log', format: file_format, handleExceptions: true }),
 			],
-			exitOnError: false,
+			exitOnError: true,
 		});
 	}
 

@@ -1,8 +1,6 @@
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import { logger } from './Logger';
-// import YamlValidator from 'yaml-validator';
-
 
 
 /*
@@ -67,7 +65,7 @@ interface ConfigOption {
 
 let loaded;
 try {
-	loaded = yaml.safeLoad(fs.readFileSync('./config.yml', 'utf8'));
+	loaded = yaml.load(fs.readFileSync('./config.yml', 'utf8'));
 } catch (err) {
 	logger.error(`Unable to load config file, this is probably caused by format error.\n${err}`);
 }

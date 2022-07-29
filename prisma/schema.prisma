@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Homework {
+  id        Int       @id @default(autoincrement())
+  subID     String    @db.VarChar(7)
+  title     String    @db.VarChar(255)
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime  @default(now()) @db.DateTime(6)
+  deletedAt DateTime? @db.DateTime(6)
+  dueDate   DateTime?
+  detail    String?   @db.VarChar(300)
+
+  @@map("homework")
+}
+
+model User {
+  id                    String   @id @default(cuid())
+  nickname              String?
+  email                 String   @unique
+  discord_id            String?  @unique @db.VarChar(18)
+  discord_access_token  String?
+  discord_refresh_token String?
+  discord_expires_in    Int?
+  password              String?  @db.VarChar(255)
+  created_at            DateTime @default(now()) @db.DateTime(6)
+  updated_at            DateTime @default(now()) @updatedAt @db.DateTime(6)
+  apiEnabled            Boolean  @default(false)
+  allowed               Boolean  @default(true)
+
+  Homework Homework[]
+
+  @@map("users")
+}

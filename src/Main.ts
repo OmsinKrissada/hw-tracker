@@ -1,208 +1,185 @@
-import fs from 'fs';
 import { logger } from './Logger';
 
-logger.info('Initiating ...');
+logger.info('Initiating...');
 logger.info(`Running on Node ${process.version}`);
 
+import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, TextChannel } from 'discord.js';
+import fs from 'fs';
+import schedule from 'node-schedule';
+import { execSync } from 'child_process';
+import { endOfDay, subDays, subHours, format, subMinutes } from 'date-fns';
+import { PrismaClient, Homework, User } from '@prisma/client';
+
+import * as Tracker from './Logic';
+import ConfigManager from './ConfigManager';
+import { listenAPI } from './WebManager';
+import { SubjectType } from './Helper';
+import './WebResource';
+
+const prisma = new PrismaClient();
+
+// Import subjects from config file
 export const subjects = function () {
 	try {
-		return JSON.parse(fs.readFileSync('subjects.json', 'utf-8')) as Subject[];
+		return JSON.parse(fs.readFileSync('subjects.json', 'utf-8')) as SubjectType[];
 	} catch (err) {
 		logger.error(`Unable to parse subjects.json: ${err}`);
 		process.exit(1);
 	}
 }();
 
-import { Client, DMChannel, Guild, GuildChannelResolvable, Message, MessageEmbed, MessageEmbedOptions, TextChannel } from 'discord.js';
-import schedule from 'node-schedule';
-import moment from 'moment-timezone';
-
-import * as Tracker from './Logic';
-import ConfigManager from './ConfigManager';
-import { connectDB, GuildDataRepository, HomeworkRepository } from './DBManager';
-import { IsNull, Not } from 'typeorm';
-import { Subject } from './Helper';
-import { Homework } from './models/Homework';
-import { listenAPI } from './Web';
-import { execSync } from 'child_process';
-
-if (ConfigManager.web.enable) import('./Web');
-
 export const bot = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_WEBHOOKS'] });
 
-let announce_guild: Guild;
+let announce_target: Guild;
 export let timetable_channel: TextChannel;
 export let hw_channel: TextChannel;
 
-const periods_begin: { [key: string]: string; } = {
-	'1': '8:30',
-	'2': '9:20',
-	'3': '10:10',
-	'4': '11:00',
-	'5': '12:40',
-	'6': '13:30',
-	'7': '14:20'
-};
+const periods = [
+	{ begin: null, end: null },
+	{ begin: '8:30', end: '9:10' },
+	{ begin: '9:20', end: '10:00' },
+	{ begin: '10:20', end: '10:50' },
+	{ begin: '11:10', end: '11:40' },
+	{ begin: '13:00', end: '13:20' },
+	{ begin: '14:00', end: '14:10' },
+	{ begin: '14:50', end: '15:00' }
+];
 
-const periods_end: { [key: string]: string; } = {
-	'1': '9:10',
-	'2': '10:00',
-	'3': '10:50',
-	'4': '11:40',
-	'5': '13:20',
-	'6': '14:10',
-	'7': '15:00'
-};
+// Schedules Handling
 
-moment.locale('en');
-moment.tz.setDefault('Asia/Bangkok');
+export const deleteJobs = new Map<number, schedule.Job>();
+export const remindJobs = new Map<number, { interval: string, job: schedule.Job; }[]>();
 
-
-let previous_announce: Message;
-function announce(subject: typeof subjects[0], current_class: string) {
-	if (previous_announce) previous_announce.delete();
-	previous_announce = null;
-	const [DoW, period, _length] = current_class.split(' ');
-	const length = +_length || 1;
-	let link = '';
-	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
-
-
-	const embed = new MessageEmbed({
-		title: `<:join_arrow:845520716715917314>  ${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
-		description: `ได้เวลาของคาบ ${period} แล้ว! (${periods_begin[period]} - ${periods_end[+period + length - 1]} น.)\n\n`,
-		color: ConfigManager.color.aqua,
-	});
-	const next_subject = subjects.filter(s => s.classes.some(c => {
-		return c.startsWith(`${DoW} ${+period + length}`);
-	}))[0];
-
-	let next_period: string, next_length: number;
-	if (next_subject) {
-		const [_next_DoW, _next_period, _next_length] = next_subject.classes.filter(c => c.startsWith(`${DoW} ${+period + length}`))[0].split(' ');
-		next_period = _next_period;
-		next_length = +_next_length || 1;
-		embed.addField('🔺 Next Subject', `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)`);
-	}
-
-	logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
-	timetable_channel.send({
-		content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
-		embeds: [embed]
-	}).then(msg => {
-		previous_announce = msg;
-		setTimeout(() => {
-			if (next_subject) {
-				const late_embed = new MessageEmbed({
-					title: '<:idle:845520741315510284>  BREAK TIME',
-					color: ConfigManager.color.aqua,
-					fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods_begin[+next_period]} - ${periods_end[+next_period + next_length - 1]} น.)` }]
-				});
-				msg.edit({
-					embeds: [late_embed]
-				});
-			} else {
-				msg.delete();
-			}
-		}, 2400000 * length);
-	});
-}
-
-function announce_upcoming(subject: typeof subjects[0]) {
-	let link = '';
-	if (subject.msteam) link = `[Microsoft Teams Channel](${subject.msteam})`;
-	logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`);
-	timetable_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
-		setTimeout(() => {
-			msg.delete();
-		}, 300000);
-	});
-}
-
-export function scheduleDeleteJobs(hw: Homework) {
+export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
 	if (!hw.dueDate) throw "doesn't have dueDate";
-	const format = hw.dueDate.valueOf() != moment(hw.dueDate).endOf('date').valueOf() ? 'LLL' : 'LL';
-	const remind1dJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'd').toDate(), () => {
-		if (!ConfigManager.remind1d) return;
-		logger.debug(`Remind 1 day ${hw.id}`);
-		hw_channel.send({
-			content: `1 day left before deadline <@&${ConfigManager.hw_role}>`,
-			embeds: [{
-				title: 'REMINDER! - __1 DAY LEFT__ For',
-				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
-				color: ConfigManager.color.light_yellow
-			}]
-		}).then(msg => setTimeout(() => {
-			if (!msg.deleted && msg.deletable) msg.delete();
-		}, (24 - 1) * 60 * 60 * 1000));
+	const formattedDate = hw.dueDate.valueOf() != endOfDay(hw.dueDate).valueOf() ? format(hw.dueDate, 'EEEEE d MMM yyyy') : 'EEEEE d MMM yyyy ';
+
+	const reminders = [
+		{
+			name: '1d',
+			friendlyName: '1 day',
+			time: subDays(hw.dueDate, 1),
+			expireDuration: (24 - 1) * 60 * 60 * 1000
+		},
+		{
+			name: '1h',
+			friendlyName: '1 hour',
+			time: subHours(hw.dueDate, 1),
+			expireDuration: (60 - 10) * 60 * 1000
+		},
+		{
+			name: '10m',
+			friendlyName: '10 mins',
+			time: subMinutes(hw.dueDate, 10),
+			expireDuration: (10 - 5) * 60 * 1000
+		},
+		{
+			name: '5m',
+			friendlyName: '5 mins',
+			time: subMinutes(hw.dueDate, 5),
+			expireDuration: 5 * 60 * 1000
+		},
+	];
+
+	const remindJobsWithName = reminders.map(reminder => {
+		const job = schedule.scheduleJob(reminder.time, () => {
+			if (!ConfigManager.remind1d) return;
+			logger.debug(`Remind ${reminder.friendlyName} ${hw.id}`);
+			hw_channel.send({
+				content: `${reminder.friendlyName} left before deadline <@&${ConfigManager.hw_role}>`,
+				embeds: [{
+					title: `REMINDER! - __${reminder.friendlyName.toUpperCase()} LEFT__ For`,
+					description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
+					color: ConfigManager.color.light_yellow
+				}]
+			}).then(msg => setTimeout(() => {
+				if (msg.deletable) msg.delete();
+			}, reminder.expireDuration));
+		});
+		return { interval: reminder.name, job };
 	});
-	const remind1hJob = schedule.scheduleJob(moment(hw.dueDate).subtract(1, 'h').toDate(), () => {
-		if (!ConfigManager.remind1hr) return;
-		logger.debug(`Remind 1 hour ${hw.id}`);
-		hw_channel.send({
-			content: `1 hour left before deadline <@&${ConfigManager.hw_role}>`,
-			embeds: [{
-				title: 'REMINDER! - __1 HOUR LEFT__ For',
-				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
-				color: ConfigManager.color.light_yellow
-			}]
-		}).then(msg => setTimeout(() => {
-			if (!msg.deleted && msg.deletable) msg.delete();
-		}, (60 - 10) * 60 * 1000));
-	});
-	const remind10mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(10, 'm').toDate(), () => {
-		if (!ConfigManager.remind10m) return;
-		logger.debug(`Remind 10 mins ${hw.id}`);
-		hw_channel.send({
-			content: `10 mins left before deadline <@&${ConfigManager.hw_role}>`,
-			embeds: [{
-				title: 'REMINDER! - __10 MINS LEFT__ For',
-				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
-				color: ConfigManager.color.light_yellow
-			}]
-		}).then(msg => setTimeout(() => {
-			if (!msg.deleted && msg.deletable) msg.delete();
-		}, (10 - 5) * 60 * 1000));
-	});
-	const remind5mJob = schedule.scheduleJob(moment(hw.dueDate).subtract(5, 'm').toDate(), () => {
-		if (!ConfigManager.remind5m) return;
-		logger.debug(`Remind 5 mins ${hw.id}`);
-		hw_channel.send({
-			content: `5 mins left before deadline <@&${ConfigManager.hw_role}>`,
-			embeds: [{
-				title: 'REMINDER! - __5 MINS LEFT__ For',
-				description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
-				color: ConfigManager.color.light_yellow
-			}]
-		}).then(msg => setTimeout(() => {
-			if (!msg.deleted && msg.deletable) msg.delete();
-		}, 5 * 60 * 1000));
-	});
+	remindJobs.set(hw.id, remindJobsWithName);
+
 	const deleteJob = schedule.scheduleJob(hw.dueDate, async () => {
-		HomeworkRepository.softDelete(hw.id);
+		prisma.homework.update({ where: { id: hw.id }, data: { deletedAt: new Date() } });
 		logger.debug(`Auto-deleted ${hw.id}`);
 		hw_channel.send({
 			content: `Time's up! <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
-				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${moment(hw.dueDate).format(format)} ‼` : ''}`,
+				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
-				footer: { text: `Added by ${(await bot.users.fetch(hw.author))?.tag ?? hw.author}` }
+				footer: { text: `Added by ${hw.author.nickname ?? (await bot.users.fetch(hw.author.discord_id))?.tag ?? "Unknown Person"}` }
 			}]
 		});
 	});
 
-	if (remind1dJob) remind1dJobs.set(hw.id, remind1dJob);
-	if (remind1hJob) remind1hJobs.set(hw.id, remind1hJob);
-	if (remind5mJob) remind5mJobs.set(hw.id, remind5mJob);
-	if (remind10mJob) remind10mJobs.set(hw.id, remind10mJob);
 	if (deleteJob) deleteJobs.set(hw.id, deleteJob);
 }
 
+let previous_announce: Message;
+function scheduleClassAnnounceJobs(subjects: SubjectType[]) {
+	subjects.forEach(subject => {
+		subject.classes.forEach(({ DoW, period, span }) => {
+			const [hour, min] = periods[period].begin.split(':');
+			schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
+				// Handle previous announce message
+				if (previous_announce) previous_announce.delete();
+				previous_announce = null;
 
+				let next_period: number, next_span: number;
+				const next_subject = subjects.find(_s => _s.classes.some(_c => {
+					next_period = _c.period;
+					next_span = _c.span;
+					return _c.DoW == DoW && _c.period == period + span;
+				}));
 
+				// Construct embed message
+				const embed = new MessageEmbed({
+					title: `<:join_arrow:845520716715917314>  ${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
+					description: `ได้เวลาของคาบ ${period} แล้ว! (${periods[period].begin} - ${periods[period + span - 1].end} น.)\n\n`,
+					color: ConfigManager.color.aqua,
+				});
+				if (next_subject) {
+					embed.addField('🔺 Next Subject', `${next_subject.name} (${periods[next_period].begin} - ${periods[next_period + next_span - 1].end} น.)`);
+				}
 
+				// Send embed message
+				logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
+				timetable_channel.send({
+					content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
+					embeds: [embed]
+				}).then(msg => {
+					previous_announce = msg;
+					setTimeout(() => {
+						if (next_subject) {
+							const over_embed = new MessageEmbed({
+								title: '<:idle:845520741315510284>  BREAK TIME',
+								color: ConfigManager.color.aqua,
+								fields: [{ name: '🔺 Next Subject', value: `${next_subject.name} (${periods[next_period].begin} - ${periods[next_period + next_span - 1].end} น.)` }]
+							});
+							msg.edit({
+								embeds: [over_embed]
+							});
+						} else {
+							msg.delete();
+						}
+					}, 2400000 * span);
+				});
+			});
+			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
+				logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`);
+				timetable_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
+					setTimeout(() => {
+						msg.delete();
+					}, 300000);
+				});
+			});
+		});
+	});
+}
 
+// Bot Events
 
 bot.once('ready', async () => {
 	process.on('SIGTERM', gracefulExit);
@@ -210,36 +187,33 @@ bot.once('ready', async () => {
 
 	bot.user.setPresence({ activities: [{ name: `/hw`, type: 'LISTENING' }] });
 
-	announce_guild = await bot.guilds.fetch(ConfigManager.guildId);
-	timetable_channel = announce_guild.channels.resolve(ConfigManager.timetableChannelId) as TextChannel;
-	hw_channel = announce_guild.channels.resolve(ConfigManager.hwChannelId) as TextChannel;
+	announce_target = await bot.guilds.fetch(ConfigManager.guildId);
+	timetable_channel = announce_target.channels.resolve(ConfigManager.timetableChannelId) as TextChannel;
+	hw_channel = announce_target.channels.resolve(ConfigManager.hwChannelId) as TextChannel;
 
 	// Register class start notification from subject.json
 	if (!ConfigManager.pause_announce) {
 		logger.info('Registering class schedule ...');
-		subjects.forEach(subject => {
-			subject.classes.forEach(c => {
-				const [DoW, period, l] = c.split(' ');
-				const [hour, min] = periods_begin[period].split(':');
-				schedule.scheduleJob(`${min} ${hour} * * ${DoW}`, () => {
-					announce(subject, c);
-				});
-				schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
-					announce_upcoming(subject);
-				});
-			});
-		});
+		scheduleClassAnnounceJobs(subjects);
 		logger.info('Class schedule registered.');
 	}
 
-	// Register class schedule with given due dates
-	const hws = await HomeworkRepository.find({ where: { dueDate: Not(IsNull()), guild: 'GLOBAL' } });
+	// Register homework schedule with given due dates
+	const hws = await prisma.homework.findMany({
+		where: {
+			dueDate: { not: null },
+		},
+		include: {
+			author: true
+		}
+	});
 	logger.info('Registering auto-delete task(s) ...');
 	hws.forEach(hw => {
 		scheduleDeleteJobs(hw);
 	});
 	logger.info(`${deleteJobs.size} Auto-delete task(s) registered.`);
 
+	// Set bot interaction commands
 	ConfigManager.update_commands && bot.application.commands.set([{
 		name: 'hw',
 		description: 'Opens homework menu.',
@@ -273,13 +247,9 @@ bot.once('ready', async () => {
 
 bot.on('interactionCreate', async interaction => {
 	if (!interaction.channel.isText()) return;
-	const channel = interaction.channel;
-	const user = interaction.user;
-
 
 	if (interaction.isCommand()) {
-		// console.log(interaction);
-		if (interaction.channel instanceof DMChannel) return; // Not supporting DM yet
+		if (interaction.channel instanceof DMChannel) return; // Does not support DM yet
 		if (!interaction.guild.me.permissionsIn(<GuildChannelResolvable>interaction.channel).has('VIEW_CHANNEL')) {
 			interaction.reply({ content: 'I do not have `VIEW_CHANNEL` permission on this channel! Please try using other channels or contacting a server admin.', ephemeral: true });
 			logger.warn('Detected command usage on a channel without `VIEW_CHANNEL` permission.');
@@ -287,22 +257,9 @@ bot.on('interactionCreate', async interaction => {
 		}
 		switch (interaction.commandName) {
 			case 'hw': {
-				let useLocal: boolean;
-				try {
-					useLocal = (await GuildDataRepository.findOne({ id: interaction.guild.id }))?.useLocal;
-				} catch (err) {
-					logger.warn('Failed to read from database');
-					const embed: MessageEmbedOptions = {
-						description: `**Cannot read from database**:\n${err}`,
-						color: ConfigManager.color.red
-					};
-					interaction.reply({ embeds: [embed] });
-					return;
-				};
-
 				interaction.reply({
 					embeds: [{
-						title: `Homework Menu ${useLocal ? '(LOCAL MODE)' : ''}`,
+						title: `M.6/1 Homework Menu`,
 						description: `Thank you for using my homework bot! 😄\n\n` +
 							`📰 **NEW!** Web Dashboard\n\n` +
 							`📕 <:join_arrow:845520716715917314> < 1 วัน\n` +
@@ -323,24 +280,12 @@ bot.on('interactionCreate', async interaction => {
 						},
 						{
 							type: 'BUTTON',
-							label: 'Web Dashboard',
+							label: 'Web App',
 							emoji: '✨',
 							style: 'LINK',
-							url: 'https://homework.krissada.com/dashboard#creation-form'
+							url: 'https://hw.krissada.com/dashboard#creation-form'
 						}]
 					},
-						// {
-						// type: 'ACTION_ROW',
-						// components: [
-
-						// 	{
-						// 		type: 'BUTTON',
-						// 		label: 'GitHub',
-						// 		emoji: '<:github_white:880034279990640680>',
-						// 		style: 'LINK',
-						// 		url: 'https://github.com/OmsinKrissada/hw-tracker/'
-						// 	},]
-						// }
 					]
 				});
 				break;
@@ -360,33 +305,6 @@ bot.on('interactionCreate', async interaction => {
 				Tracker.add(interaction);
 				break;
 			}
-			case 'remove': {
-				// interaction.reply({
-				// 	embeds: [{
-				// 		description: 'Testing new awesome feature'
-				// 	}],
-				// 	components: [{
-				// 		type: 'ACTION_ROW',
-				// 		components: [{
-				// 			type: 'SELECT_MENU',
-				// 			placeholder: 'Choose homework to delete',
-				// 			options: [{ label: 'Label', value: 'Value', default: false, description: 'description', emoji: '🎓' }],
-				// 			customId: 'customId'
-				// 		}]
-				// 	}]
-				// });
-				// break;
-				const id = interaction.options.get('id').value as number;
-				Tracker.remove(interaction, id);
-				break;
-			}
-			case 'toggle': {
-				let useLocal = (await GuildDataRepository.findOne(interaction.guild.id))?.useLocal;
-				GuildDataRepository.save({ id: interaction.guild.id, useLocal: !useLocal });
-				interaction.reply(`Changed homework source to: \`${!useLocal ? 'LOCAL' : 'GLOBAL'}\``);
-				logger.debug(`Guild<${interaction.guild.id}> Changed source mode to ${!useLocal ? 'LOCAL' : 'GLOBAL'}`);
-				break;
-			}
 		}
 	}
 
@@ -402,87 +320,21 @@ bot.on('interactionCreate', async interaction => {
 					interaction.deferUpdate();
 					Tracker.add(interaction);
 					break;
-				case 'hw_remove':
-					interaction.update({
-						embeds: [{ title: 'Please enter homework ID to delete.', description: '(ID คือเลขหลังชื่อการบ้านในในคำสั่ง \`/listid\`)' }],
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								label: 'Cancel',
-								style: 'DANGER',
-								customId: 'cancel_remove'
-							}]
-						}]
-					});
-					let received = false;
-					const reply_promise = channel.awaitMessages({ filter: m => m.author.id == user.id, max: 1 }).then(async collected => {
-						if (received) return;
-						received = true;
-						const content = collected.first()?.content;
-						if (content) {
-							if (isNaN(+content))
-								(interaction.message as Message).edit({
-									embeds: [{
-										title: 'Invalid',
-										description: `Invalid homework ID: \`${content}\``,
-										color: ConfigManager.color.red
-									}],
-									components: []
-								});
-							else {
-								Tracker.remove(interaction, +content);
-							}
-						} else {
-							(interaction.message as Message).edit({
-								embeds: [{
-									title: 'Please provide homework ID',
-									description: `Usage: \`/remove ID\`\nEx: \`/remove 10\``,
-									color: ConfigManager.color.red
-								}],
-								components: []
-							});
-						}
-						if (collected.first().deletable) collected.first().delete();
-					});
-
-					const cancel_promise = (<Message>interaction.message).awaitMessageComponent({ filter: i => i.user.id == user.id }).then(async interaction => {
-						if (received) return;
-						received = true;
-						interaction.update({ content: 'You\'ve canceled homework deletion.', embeds: [], components: [] });
-					});
-
-					await Promise.race([reply_promise, cancel_promise]);
-
-					break;
-
-
 			}
 		}
-		// logger.debug(interaction.customId);
 	} else if (interaction.isSelectMenu()) {
 		// console.debug(interaction);
 	}
 });
 
-
-export const deleteJobs = new Map<number, schedule.Job>();
-export const remind1dJobs = new Map<number, schedule.Job>();
-export const remind1hJobs = new Map<number, schedule.Job>();
-export const remind10mJobs = new Map<number, schedule.Job>();
-export const remind5mJobs = new Map<number, schedule.Job>();
-
-connectDB().then(() => {
-	bot.login(ConfigManager.discord.token).then(() => {
-		logger.info(`Logged in to Discord as >> ${bot.user.tag} (${bot.user.id})`);
-	});
-	listenAPI();
+bot.login(ConfigManager.discord.token).then(() => {
+	logger.info(`Logged-in to Discord as ${bot.user.tag} [ID: ${bot.user.id}]`);
 });
+listenAPI();
 
 function gracefulExit(signal: NodeJS.Signals) {
-	logger.warn('Please debug the program if this wasn\'t your intention.');
-	logger.info(`Graceful shutdown initiated with "${signal}".`);
+	logger.warn(`Graceful shutdown triggered by "${signal}".`);
 	bot.destroy();
-	logger.info('Successfully destroyed the bot instance.');
+	logger.warn('Successfully destroyed the bot instance.');
 	process.exit();
 }
