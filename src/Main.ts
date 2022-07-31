@@ -36,13 +36,13 @@ export let hw_channel: TextChannel;
 
 const periods = [
 	{ begin: null, end: null },
-	{ begin: '8:30', end: '9:10' },
-	{ begin: '9:20', end: '10:00' },
-	{ begin: '10:20', end: '10:50' },
-	{ begin: '11:10', end: '11:40' },
-	{ begin: '13:00', end: '13:20' },
-	{ begin: '14:00', end: '14:10' },
-	{ begin: '14:50', end: '15:00' }
+	{ begin: '8:30', end: '9:20' },
+	{ begin: '9:20', end: '10:10' },
+	{ begin: '10:20', end: '11:10' },
+	{ begin: '11:10', end: '12:00' },
+	{ begin: '13:00', end: '13:50' },
+	{ begin: '14:00', end: '14:50' },
+	{ begin: '14:50', end: '15:40' }
 ];
 
 // Schedules Handling
