@@ -1,6 +1,7 @@
 import express from 'express';
 import { validationResult } from 'express-validator';
 import cors from 'cors';
+import path from 'path';
 
 import { logger } from './Logger';
 import { PrismaClient } from '@prisma/client';
@@ -52,7 +53,7 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 });
 
 // Documentation
-app.use('/docs', express.static('docs/.vuepress/dist'));
+app.use('/docs', express.static(path.join(process.cwd(), 'docs/.vitepress/dist')));
 
 const port = process.env.PORT ?? ConfigManager.web.port ?? 3000;
 export function listenAPI() {
