@@ -36,5 +36,6 @@ jobs:
         node-version: '16'
         always-auth: false
     - run: yarn install
+    - run: yarn docs:build
     
     
