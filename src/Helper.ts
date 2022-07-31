@@ -274,9 +274,16 @@ export interface SubjectType {
 	}[];
 };
 
-export function includeDeletedCondition(includeDeleted: boolean): ({ not: null; } | null) {
+export function includeDeletedCondition(includeDeleted: boolean): (undefined | null) {
 	if (includeDeleted)
-		return { not: null };
+		return undefined;
 	else
 		return null;
+}
+
+export function stringToBoolean(query: string) {
+	query = String(query);
+	if (query.toLowerCase() === 'true') return true;
+	if (query.toLowerCase() === 'false') return false;
+	if (!isNaN(+query)) return !!(+query);
 }

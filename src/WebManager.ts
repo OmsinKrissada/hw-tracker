@@ -37,8 +37,8 @@ app.use((req, res, next) => {
 
 // Check Content-Type
 app.use((req, res, next) => {
-	if (req.method.toUpperCase() == 'POST' && !req.is('application/json')) {
-		res.status(415).send({ message: 'only accepts application/json in POST method' });
+	if ((req.method.toUpperCase() == 'POST' || req.method.toUpperCase() == 'PUT' || req.method.toUpperCase() == 'PATCH') && !req.is('application/json')) {
+		res.status(415).send({ message: 'only accepts application/json in POST, PUT and PATCH method' });
 	} else {
 		express.json()(req, res, next);
 	}
@@ -50,6 +50,9 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 		res.status(400).send({ message: 'received malformed JSON' });
 	}
 });
+
+// Documentation
+app.use('/docs', express.static('docs/.vuepress/dist'));
 
 const port = process.env.PORT ?? ConfigManager.web.port ?? 3000;
 export function listenAPI() {

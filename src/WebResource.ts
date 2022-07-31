@@ -1,10 +1,23 @@
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
+import { Prisma } from '@prisma/client';
+
 
 import { logger } from './Logger';
 import { deleteJobs, remindJobs, scheduleDeleteJobs, subjects } from './Main';
-import { includeDeletedCondition } from './Helper';
+import { includeDeletedCondition, stringToBoolean } from './Helper';
 import { app, myValidationResult, prisma } from './WebManager';
 import { auth } from './WebAuth';
+
+const user_select_public = {
+	select: {
+		id: true,
+		email: true,
+		discord_id: true,
+		nickname: true,
+		created_at: true,
+		updated_at: true
+	}
+};
 
 // ----- Real logic -----
 
@@ -14,9 +27,39 @@ app.get('/subjects', auth, async (req, res) => {
 	res.send(subjects);
 });
 
+// retrieve homework
+app.get('/homeworks',
+	auth,
+	query('includeUser').optional().isBoolean().withMessage('Must be a boolean'),
+	query('withDeleted').optional().isBoolean().withMessage('Must be a boolean'),
+	async (req, res) => {
+		const errors = myValidationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json(errors.array({ onlyFirstError: true }));
+		}
+
+		const hws = await prisma.homework.findMany({
+			where: { deletedAt: includeDeletedCondition(stringToBoolean(<any>req.query.withDeleted)) },
+			select: {
+				authorId: true,
+				createdAt: true,
+				deletedAt: true,
+				detail: true,
+				dueDate: true,
+				id: true,
+				subID: true,
+				title: true,
+				author: stringToBoolean(<any>req.query.includeUser) ? user_select_public : false
+			},
+		});
+		return res.send(hws);
+	}
+);
+
 app.get('/homeworks/:id',
 	auth,
 	param('id').isInt().withMessage('Must be an integer'),
+	query('includeUser').optional().isBoolean().withMessage('Must be a boolean'),
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
@@ -24,19 +67,26 @@ app.get('/homeworks/:id',
 		}
 		const id = +req.params.id;
 
-		const hws = await prisma.homework.findUnique({ where: { id } });
-		if (hws)
-			return res.send(hws);
+		const hw = await prisma.homework.findUnique({
+			where: { id },
+			select: {
+				authorId: true,
+				createdAt: true,
+				deletedAt: true,
+				detail: true,
+				dueDate: true,
+				id: true,
+				subID: true,
+				title: true,
+				author: stringToBoolean(<string>req.query.includeUser) ? user_select_public : false
+			},
+		});
+		if (hw)
+			return res.send(hw);
 		else
 			return res.status(404).send({ message: 'Homework not found' });
-	});
-
-
-app.get('/homeworks', auth, async (req, res) => {
-	const hws = await prisma.homework.findMany({ where: { deletedAt: includeDeletedCondition(<any>req.query.withDeleted) } });
-	return res.send(hws);
-});
-
+	}
+);
 
 // add homework
 app.post('/homeworks',
@@ -135,7 +185,7 @@ app.delete('/homeworks/:id',
 		else {
 			await prisma.homework.delete({ where: { id: hw.id } });
 			logger.debug(`deleted ${id}`);
-			res.status(200).send('deleted');
+			res.status(200).send(hw);
 			if (deleteJobs.has(hw.id)) {
 				deleteJobs.get(hw.id).cancel();
 				remindJobs.get(hw.id).forEach(({ job }) => job.cancel());

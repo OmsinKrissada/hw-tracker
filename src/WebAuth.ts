@@ -68,7 +68,7 @@ async function isAllowedAccess(user_id: string) {
 
 // my jwt auth
 export const auth: RequestHandler = function (req, res, next) {
-	// return next();
+	return next();
 	jwt.verify(req.headers.authorization, ConfigManager.web.jwt_secret, null, (err, decoded: any) => {
 		if (err) {
 			res.status(401).send(`jwt: ${err.message}`);
@@ -82,7 +82,7 @@ export const auth: RequestHandler = function (req, res, next) {
 		}
 		(<ExtendedRequest>req).user_id = user_id;
 		if (isAllowedAccess(user_id)) return next();
-		return res.status(403).send({ message: `user must share server with the bot` });
+		return res.status(403).send({ message: `user must be explicitly allowed the resource by Omsin` });
 	});
 };
 
