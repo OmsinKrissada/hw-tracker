@@ -9,7 +9,7 @@ export default defineConfig({
 		nav: [
 			{ text: 'Documentation', link: '/guide/', activeMatch: '/guide/*' },
 			{ text: 'Troubleshooting', link: '/configs' },
-			{ text: 'Visit Website', link: 'https://hw.krissada.com', }
+			{ text: 'Visit Website', link: 'https://homework.krissada.com', }
 		],
 		socialLinks: [
 			// { icon: 'discord', link: 'https://hw.krissada.com' },
