@@ -1,5 +1,5 @@
 {
-	"watch": ["src"],
+	"watch": ["src", "config.yml"],
 	"ext": "ts",
 	"exec": "ts-node ./src/Main.ts",
 	"signal": "SIGINT"

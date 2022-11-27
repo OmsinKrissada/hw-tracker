@@ -89,7 +89,7 @@ export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
 				content: `${reminder.friendlyName} left before deadline <@&${ConfigManager.hw_role}>`,
 				embeds: [{
 					title: `REMINDER! - __${reminder.friendlyName.toUpperCase()} LEFT__ For`,
-					description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
+					description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subId)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
 					color: ConfigManager.color.light_yellow
 				}]
 			}).then(msg => setTimeout(() => {
@@ -107,9 +107,9 @@ export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
 			content: `Time's up! <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
-				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subID)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
+				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subId)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
-				footer: { text: `Added by ${hw.author.nickname ?? (await bot.users.fetch(hw.author.discord_id))?.tag ?? "Unknown Person"}` }
+				footer: { text: `Added by ${hw.author.nickname ?? (await bot.users.fetch(hw.author.discordId))?.tag ?? "Unknown Person"}` }
 			}]
 		});
 	});
@@ -329,8 +329,8 @@ bot.on('interactionCreate', async interaction => {
 
 bot.login(ConfigManager.discord.token).then(() => {
 	logger.info(`Logged-in to Discord as ${bot.user.tag} [ID: ${bot.user.id}]`);
+	listenAPI();
 });
-listenAPI();
 
 function gracefulExit(signal: NodeJS.Signals) {
 	logger.warn(`Graceful shutdown triggered by "${signal}".`);

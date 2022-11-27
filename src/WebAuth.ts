@@ -1,38 +1,34 @@
-import express, { RequestHandler } from 'express';
-import { body, check, param, validationResult } from 'express-validator';
+import { RequestHandler } from 'express';
+import { body } from 'express-validator';
 import axios, { AxiosError } from 'axios';
 import jwt from 'jsonwebtoken';
 import qs from 'qs';
-import cors from 'cors';
 import bcrypt from 'bcrypt';
 
 import ConfigManager from './ConfigManager';
 import { logger } from './Logger';
-import { deleteJobs, remindJobs, scheduleDeleteJobs, subjects } from './Main';
 import { bot } from './Main';
-import { PrismaClient } from '@prisma/client';
 import { addSeconds } from 'date-fns';
-import { includeDeletedCondition } from './Helper';
 import { app, myValidationResult, prisma } from './WebManager';
 
 const JWT_VERSION = 'v2';
 
-async function refreshToken(user_id: string) {
+export async function refreshToken(user_id: string) {
 	logger.debug(`Refresh token for ${user_id}`);
-	const { discord_refresh_token } = await prisma.user.findUnique({ where: { discord_id: user_id } });
+	const { discordRefreshToken } = await prisma.user.findUnique({ where: { discordId: user_id } });
 	const { access_token: new_access_token, refresh_token: new_refresh_token, expires_in: new_expires_in } = (await axios.post('https://discord.com/api/oauth2/token',
 		qs.stringify({
 			'client_id': bot.application.id,
 			'client_secret': ConfigManager.discord.client_secret,
 			'grant_type': 'refresh_token',
-			'refresh_token': discord_refresh_token
+			'refresh_token': discordRefreshToken
 		}), {
 		headers: {
 			'Content-Type': 'application/x-www-form-urlencoded'
 		}
 	})).data;
 	logger.debug(`${new_access_token} ${new_refresh_token}`);
-	return await prisma.user.update({ where: { discord_id: user_id }, data: { discord_access_token: new_access_token, discord_refresh_token: new_refresh_token, discord_expires_in: new_expires_in } });
+	return await prisma.user.update({ where: { discordId: user_id }, data: { discordAccessToken: new_access_token, discordRefreshToken: new_refresh_token, discordExpiresIn: new_expires_in, discordRefreshedAt: new Date() } });
 
 }
 
@@ -41,16 +37,16 @@ async function isAllowedAccess(user_id: string) {
 	// Check in cache first
 	if (access_cache.has(user_id)) return true;
 
-	let { discord_access_token, discord_expires_in, updated_at } = await prisma.user.findUnique({ where: { discord_id: user_id } });
+	let { discordAccessToken, discordExpiresIn, discordRefreshedAt } = await prisma.user.findUnique({ where: { discordId: user_id } });
 
-	if (addSeconds(updated_at, discord_expires_in) < new Date()) {
-		({ discord_access_token } = await refreshToken(user_id));
+	if (addSeconds(discordRefreshedAt, discordExpiresIn) < new Date()) {
+		({ discordAccessToken } = await refreshToken(user_id));
 	}
 
 	const bot_guilds = bot.guilds.cache.map(g => g.id);
 	const user_guilds: string[] = (await axios.get('https://discord.com/api/users/@me/guilds', {
 		headers: {
-			'Authorization': `Bearer ${discord_access_token}`
+			'Authorization': `Bearer ${discordAccessToken}`
 		}
 	})).data.map((g: any) => g.id);
 
@@ -92,7 +88,7 @@ app.post('/auth/discord',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 		const { code, state } = req.body;
 
@@ -113,9 +109,9 @@ app.post('/auth/discord',
 			});
 			({ access_token, refresh_token, expires_in } = oauth_response.data);
 		} catch (err) {
-			if (err instanceof AxiosError) {
-				logger.error(`Failed to contact Discord OAuth server: ${err.response.status} ${JSON.stringify(err.response.data)}`);
-				res.status(500).send({ message: `Failed to contact Discord OAuth server`, response_status: err.response.status, response_data: err.response.data });
+			if (axios.isAxiosError(err)) {
+				logger.error(`Failed to contact Discord OAuth server: ${err.response?.status} ${JSON.stringify(err.response?.data)}`);
+				res.status(500).send({ message: `Failed to contact Discord OAuth server`, response_status: err.response?.status, response_data: err.response?.data });
 			}
 			else {
 				logger.error(`Failed to contact Discord OAuth server: ${err}`);
@@ -133,11 +129,12 @@ app.post('/auth/discord',
 		let updated_user;
 		try {
 			updated_user = await prisma.user.upsert({
-				where: { discord_id: user.id },
-				update: { discord_access_token: access_token, discord_refresh_token: refresh_token, discord_expires_in: expires_in },
-				create: { email: user.email, discord_id: user.id, discord_access_token: access_token, discord_refresh_token: refresh_token, discord_expires_in: expires_in }
+				where: { email: user.email },
+				update: { discordId: user.id, discordAccessToken: access_token, discordRefreshToken: refresh_token, discordExpiresIn: expires_in, discordRefreshedAt: new Date() },
+				create: { email: user.email, discordId: user.id, discordAccessToken: access_token, discordRefreshToken: refresh_token, discordExpiresIn: expires_in, discordRefreshedAt: new Date() }
 			});
 		} catch (err) {
+			logger.error(`Failed to authenticate user: ${err}`);
 			return res.status(500).send({ message: `Failed to authenticate user: ${err}` });
 		}
 
@@ -154,7 +151,7 @@ app.post('/auth/password/register',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 		const { email, password } = req.body;
 
@@ -179,7 +176,7 @@ app.post('/auth/password/change',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 		const { password } = req.body;
 
@@ -203,7 +200,7 @@ app.post('/auth/password/login',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 		const { email, password } = req.body;
 
@@ -212,7 +209,7 @@ app.post('/auth/password/login',
 		try {
 			user = await prisma.user.findUnique({ where: { email } });
 			if (!user)
-				return res.status(404).send({ message: `user not found` });
+				return res.status(404).send({ message: `Invalid username or password` });
 		} catch (err) {
 			return res.status(500).send({ message: `Failed to retrieve user from database` });
 		}
@@ -221,7 +218,7 @@ app.post('/auth/password/login',
 		try {
 			const result = bcrypt.compareSync(password, user.password);
 			if (!result) {
-				return res.status(403).send({ message: `Invalid password` });
+				return res.status(403).send({ message: `Invalid username or password` });
 			}
 			const payload = { version: JWT_VERSION, id: user.id };
 			const jwt_token = jwt.sign(payload, ConfigManager.web.jwt_secret, { expiresIn: '1y' });

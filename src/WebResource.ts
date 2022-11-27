@@ -6,7 +6,9 @@ import { logger } from './Logger';
 import { deleteJobs, remindJobs, scheduleDeleteJobs, subjects } from './Main';
 import { includeDeletedCondition, stringToBoolean } from './Helper';
 import { app, myValidationResult, prisma } from './WebManager';
-import { auth } from './WebAuth';
+import { auth, refreshToken } from './WebAuth';
+import { addSeconds } from 'date-fns';
+import axios from 'axios';
 
 const user_select_public = {
 	select: {
@@ -35,7 +37,7 @@ app.get('/homeworks',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 
 		const hws = await prisma.homework.findMany({
@@ -76,7 +78,7 @@ app.get('/homeworks/:id',
 				detail: true,
 				dueDate: true,
 				id: true,
-				subID: true,
+				subId: true,
 				title: true,
 				author: stringToBoolean(<string>req.query.includeUser) ? user_select_public : false
 			},
@@ -98,7 +100,7 @@ app.post('/homeworks',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 
 		const { title, detail, subject, dueDate } = req.body;
@@ -116,7 +118,7 @@ app.post('/homeworks',
 		let create_result;
 		try {
 			create_result = await prisma.homework.create({
-				data: { title, subID: subject, detail, dueDate: date, author: (<any>req)['user_id'] },
+				data: { title, subId: subject, detail, dueDate: date, author: (<any>req)['user_id'] },
 			});
 			logger.info(`Created homework with following data: ${JSON.stringify(create_result, null, '\t')}`);
 		} catch (err: any) {
@@ -143,7 +145,7 @@ app.patch('/homeworks/:id',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 		const { title, detail, subject, dueDate } = req.body;
 		const date = new Date(dueDate);
@@ -158,7 +160,7 @@ app.patch('/homeworks/:id',
 		try {
 			update_result = await prisma.homework.update({
 				where: { id: id },
-				data: { title, detail, subID: subject, dueDate }
+				data: { title, detail, subId: subject, dueDate }
 			});
 			logger.info(`Updated homework [${id}] with following data: ${JSON.stringify(update_result, null, '\t')}`);
 		} catch (err: any) {
@@ -176,7 +178,7 @@ app.delete('/homeworks/:id',
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
+			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 		const id = +req.params.id;
 
@@ -205,4 +207,39 @@ app.patch('/homeworks', (req, res) => {
 
 app.delete('/homeworks', (req, res) => {
 	res.send({ message: 'Please use DELETE /homeworks/:id' });
+});
+
+
+// external resources
+
+app.get('/users/:id', async (req, res) => {
+	let { discordId, discordAccessToken: token, discordExpiresIn: expiresIn, discordRefreshedAt: refreshedAt } = await prisma.user.findUnique({
+		select: {
+			discordId: true,
+			discordAccessToken: true,
+			updatedAt: true,
+			discordExpiresIn: true,
+			discordRefreshedAt: true,
+		},
+		where: {
+			id: req.params.id
+		}
+	});
+	if (addSeconds(refreshedAt, expiresIn) < new Date()) {
+		({ discordAccessToken: token } = await refreshToken(discordId));
+	}
+	const { data } = await axios.get('https://discord.com/api/users/@me', {
+		headers: {
+			Authorization: `Bearer ${token}`
+		}
+	});
+
+	res.send({
+		discordId: discordId,
+		tag: `${data.username}#${data.discriminator}`,
+		banner: data.banner,
+		bannerColor: data.banner_color,
+		accentColor: data.accent_color,
+		avatarURL: `https://cdn.discordapp.com/avatars/${discordId}/${data.avatar}.png?size=1024`
+	});
 });

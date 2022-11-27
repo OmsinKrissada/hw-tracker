@@ -10,10 +10,10 @@ GET /homeworks
 
 #### Query String Parameters:
 
-| Field         | Detail                                                                   |
-| ------------- | ------------------------------------------------------------------------ |
-| `includeUser` | `boolean` whether to include `author` field in the response _(optional)_ |
-| `withDeleted` | `boolean` whether to include deleted/expired homework _(optional)_       |
+| Field         | Type                 | Detail                                                         |
+| ------------- | -------------------- | -------------------------------------------------------------- |
+| `includeUser` | `boolean` (optional) | whether to include `author` field in the response _(optional)_ |
+| `withDeleted` | `boolean`            | whether to include deleted/expired homework _(optional)_       |
 
 ### Response
 
