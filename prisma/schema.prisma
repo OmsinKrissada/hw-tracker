@@ -3,39 +3,42 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Homework {
-  id        Int       @id @default(autoincrement())
-  subID     String    @db.VarChar(7)
-  title     String    @db.VarChar(255)
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  createdAt DateTime  @default(now()) @db.DateTime(6)
-  deletedAt DateTime? @db.DateTime(6)
-  dueDate   DateTime?
-  detail    String?   @db.VarChar(300)
+  id             String    @id @default(cuid())
+  subId          String?   @map("sub_id") @db.VarChar(7)
+  title          String    @db.VarChar(255)
+  // author    User      @relation(fields: [authorId], references: [id])
+  // authorId  String    @map("author_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
+  dueDate        DateTime? @map("due_date")
+  detail         String?   @db.VarChar(300)
+  authorNickname String    @map("author_nickname")
 
   @@map("homework")
 }
 
-model User {
-  id                    String   @id @default(cuid())
-  nickname              String?
-  email                 String   @unique
-  discord_id            String?  @unique @db.VarChar(18)
-  discord_access_token  String?
-  discord_refresh_token String?
-  discord_expires_in    Int?
-  password              String?  @db.VarChar(255)
-  created_at            DateTime @default(now()) @db.DateTime(6)
-  updated_at            DateTime @default(now()) @updatedAt @db.DateTime(6)
-  apiEnabled            Boolean  @default(false)
-  allowed               Boolean  @default(true)
+// model User {
+//   id                  String    @id @default(cuid())
+//   nickname            String?
+//   email               String    @unique
+//   discordId           String?   @unique @map("discord_id") @db.VarChar(18)
+//   discordAccessToken  String?   @map("discord_access_token")
+//   discordRefreshToken String?   @map("discord_refresh_token")
+//   discordExpiresIn    Int?      @map("discord_expires_in")
+//   password            String?   @db.VarChar(255)
+//   createdAt           DateTime  @default(now()) @map("created_at")
+//   updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+//   discordRefreshedAt  DateTime? @map("discord_refreshed_at")
+//   apiEnabled          Boolean   @default(false) @map("api_enabled")
+//   allowed             Boolean   @default(true)
 
-  Homework Homework[]
+//   Homework Homework[]
 
-  @@map("users")
-}
+//   @@map("users")
+// }

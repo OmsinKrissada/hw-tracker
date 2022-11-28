@@ -8,7 +8,7 @@ import fs from 'fs';
 import schedule from 'node-schedule';
 import { execSync } from 'child_process';
 import { endOfDay, subDays, subHours, format, subMinutes } from 'date-fns';
-import { PrismaClient, Homework, User } from '@prisma/client';
+import { PrismaClient, Homework } from '@prisma/client';
 
 import * as Tracker from './Logic';
 import ConfigManager from './ConfigManager';
@@ -47,10 +47,10 @@ const periods = [
 
 // Schedules Handling
 
-export const deleteJobs = new Map<number, schedule.Job>();
-export const remindJobs = new Map<number, { interval: string, job: schedule.Job; }[]>();
+export const deleteJobs = new Map<string, schedule.Job>();
+export const remindJobs = new Map<string, { interval: string, job: schedule.Job; }[]>();
 
-export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
+export function scheduleDeleteJobs(hw: Homework) {
 	if (!hw.dueDate) throw "doesn't have dueDate";
 	const formattedDate = hw.dueDate.valueOf() != endOfDay(hw.dueDate).valueOf() ? format(hw.dueDate, 'EEEEE d MMM yyyy') : 'EEEEE d MMM yyyy ';
 
@@ -89,7 +89,7 @@ export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
 				content: `${reminder.friendlyName} left before deadline <@&${ConfigManager.hw_role}>`,
 				embeds: [{
 					title: `REMINDER! - __${reminder.friendlyName.toUpperCase()} LEFT__ For`,
-					description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subId)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
+					description: `📕 **${hw.title}** | ID: \`${hw.id}\`\n\n**Subject**: ${hw.subId ? subjects.filter(s => s.subId == hw.subId)[0].name : 'None'}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
 					color: ConfigManager.color.light_yellow
 				}]
 			}).then(msg => setTimeout(() => {
@@ -98,6 +98,7 @@ export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
 		});
 		return { interval: reminder.name, job };
 	});
+	console.log(remindJobsWithName);
 	remindJobs.set(hw.id, remindJobsWithName);
 
 	const deleteJob = schedule.scheduleJob(hw.dueDate, async () => {
@@ -107,9 +108,9 @@ export function scheduleDeleteJobs(hw: Homework & { author: User; }) {
 			content: `Time's up! <@&${ConfigManager.hw_role}>`,
 			embeds: [{
 				title: '⏰ DEADLINE HIT',
-				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${subjects.filter(s => s.subID == hw.subId)[0].name}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
+				description: `📕 **${hw.title}** | \`${hw.id}\`\n\n**Subject**: ${hw.subId ? subjects.filter(s => s.subId == hw.subId)[0].name : 'None'}${hw.detail ? `\n**Detail**: ${hw.detail}` : ''}${hw.dueDate ? `\n\n**Due**: ${formattedDate} ‼` : ''}`,
 				color: ConfigManager.color.yellow,
-				footer: { text: `Added by ${hw.author.nickname ?? (await bot.users.fetch(hw.author.discordId))?.tag ?? "Unknown Person"}` }
+				footer: { text: `Added by ${hw.authorNickname ?? "Unknown"}` }
 			}]
 		});
 	});
@@ -136,7 +137,7 @@ function scheduleClassAnnounceJobs(subjects: SubjectType[]) {
 
 				// Construct embed message
 				const embed = new MessageEmbed({
-					title: `<:join_arrow:845520716715917314>  ${subject.name}` + (subject.subID ? ` (${subject.subID})` : ''),
+					title: `<:join_arrow:845520716715917314>  ${subject.name}` + (subject.subId ? ` (${subject.subId})` : ''),
 					description: `ได้เวลาของคาบ ${period} แล้ว! (${periods[period].begin} - ${periods[period + span - 1].end} น.)\n\n`,
 					color: ConfigManager.color.aqua,
 				});
@@ -145,7 +146,7 @@ function scheduleClassAnnounceJobs(subjects: SubjectType[]) {
 				}
 
 				// Send embed message
-				logger.debug(`Announcing class ${subject.name} ${subject.subID}`);
+				logger.debug(`Announcing class ${subject.name} ${subject.subId}`);
 				timetable_channel.send({
 					content: `เริ่มคาบ ${subject.name} แล้ว <@&${ConfigManager.timetable_role}>`,
 					embeds: [embed]
@@ -168,8 +169,8 @@ function scheduleClassAnnounceJobs(subjects: SubjectType[]) {
 				});
 			});
 			schedule.scheduleJob(`${+min >= 5 ? +min - 5 : 60 - 5 + +min} ${+min >= 5 ? hour : +hour - 1} * * ${DoW}`, () => {
-				logger.debug(`Announcing upcoming class ${subject.name} ${subject.subID}`);
-				timetable_channel.send(`**${subject.name} ${(subject.subID ? `(${subject.subID})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
+				logger.debug(`Announcing upcoming class ${subject.name} ${subject.subId}`);
+				timetable_channel.send(`**${subject.name} ${(subject.subId ? `(${subject.subId})` : '')}** กำลังจะเริ่มในอีก 5 นาทีครับ`).then(msg => {
 					setTimeout(() => {
 						msg.delete();
 					}, 300000);
@@ -203,9 +204,6 @@ bot.once('ready', async () => {
 		where: {
 			dueDate: { not: null },
 		},
-		include: {
-			author: true
-		}
 	});
 	logger.info('Registering auto-delete task(s) ...');
 	hws.forEach(hw => {

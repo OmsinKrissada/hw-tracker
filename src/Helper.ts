@@ -266,7 +266,7 @@ export function appendTimeToDate(date: Date, time: string) {
 
 export interface SubjectType {
 	name: string;
-	subID: string;
+	subId: string;
 	classes: {
 		DoW: number;
 		period: number;

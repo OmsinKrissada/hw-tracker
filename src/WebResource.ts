@@ -6,7 +6,7 @@ import { logger } from './Logger';
 import { deleteJobs, remindJobs, scheduleDeleteJobs, subjects } from './Main';
 import { includeDeletedCondition, stringToBoolean } from './Helper';
 import { app, myValidationResult, prisma } from './WebManager';
-import { auth, refreshToken } from './WebAuth';
+// import { auth, refreshToken } from './WebAuth';
 import { addSeconds } from 'date-fns';
 import axios from 'axios';
 
@@ -25,13 +25,16 @@ const user_select_public = {
 
 // Resource provider
 
-app.get('/subjects', auth, async (req, res) => {
-	res.send(subjects);
-});
+app.get('/subjects',
+	// auth,
+	async (req, res) => {
+		res.send(subjects);
+	}
+);
 
 // retrieve homework
 app.get('/homeworks',
-	auth,
+	// auth,
 	query('includeUser').optional().isBoolean().withMessage('Must be a boolean'),
 	query('withDeleted').optional().isBoolean().withMessage('Must be a boolean'),
 	async (req, res) => {
@@ -43,36 +46,7 @@ app.get('/homeworks',
 		const hws = await prisma.homework.findMany({
 			where: { deletedAt: includeDeletedCondition(stringToBoolean(<any>req.query.withDeleted)) },
 			select: {
-				authorId: true,
-				createdAt: true,
-				deletedAt: true,
-				detail: true,
-				dueDate: true,
-				id: true,
-				subID: true,
-				title: true,
-				author: stringToBoolean(<any>req.query.includeUser) ? user_select_public : false
-			},
-		});
-		return res.send(hws);
-	}
-);
-
-app.get('/homeworks/:id',
-	auth,
-	param('id').isInt().withMessage('Must be an integer'),
-	query('includeUser').optional().isBoolean().withMessage('Must be a boolean'),
-	async (req, res) => {
-		const errors = myValidationResult(req);
-		if (!errors.isEmpty()) {
-			return res.status(400).json(errors.array({ onlyFirstError: true }));
-		}
-		const id = +req.params.id;
-
-		const hw = await prisma.homework.findUnique({
-			where: { id },
-			select: {
-				authorId: true,
+				authorNickname: true,
 				createdAt: true,
 				deletedAt: true,
 				detail: true,
@@ -80,22 +54,70 @@ app.get('/homeworks/:id',
 				id: true,
 				subId: true,
 				title: true,
-				author: stringToBoolean(<string>req.query.includeUser) ? user_select_public : false
+				// author: stringToBoolean(<any>req.query.includeUser) ? user_select_public : false
 			},
+			orderBy: {
+				dueDate: 'asc',
+			}
 		});
-		if (hw)
-			return res.send(hw);
-		else
-			return res.status(404).send({ message: 'Homework not found' });
+		const output = hws.map(h => {
+			return {
+				id: h.id,
+				title: h.title,
+				detail: h.detail,
+				author: h.authorNickname,
+				dueDate: h.dueDate,
+				subject: h.subId ? {
+					id: h.subId,
+					name: subjects.filter(s => s.subId === h.subId)[0].name
+				} : null,
+				createdAt: h.createdAt,
+				deletedAt: h.deletedAt,
+			};
+		});
+		return res.send(output);
 	}
 );
 
+// app.get('/homeworks/:id',
+// 	auth,
+// 	param('id').isInt().withMessage('Must be an integer'),
+// 	query('includeUser').optional().isBoolean().withMessage('Must be a boolean'),
+// 	async (req, res) => {
+// 		const errors = myValidationResult(req);
+// 		if (!errors.isEmpty()) {
+// 			return res.status(400).json(errors.array({ onlyFirstError: true }));
+// 		}
+// 		const id = +req.params.id;
+
+// 		const hw = await prisma.homework.findUnique({
+// 			where: { id },
+// 			select: {
+// 				authorId: true,
+// 				createdAt: true,
+// 				deletedAt: true,
+// 				detail: true,
+// 				dueDate: true,
+// 				id: true,
+// 				subId: true,
+// 				title: true,
+// 				author: stringToBoolean(<string>req.query.includeUser) ? user_select_public : false
+// 			},
+// 		});
+// 		if (hw)
+// 			return res.send(hw);
+// 		else
+// 			return res.status(404).send({ message: 'Homework not found' });
+// 	}
+// );
+
 // add homework
 app.post('/homeworks',
-	auth,
+	// auth,
 	body('title').notEmpty().withMessage('Field is required').isString().withMessage('Must be a string'),
 	body('detail').isLength({ max: 300 }).withMessage('Cannot exceed 300 characters'),
-	body('subject').notEmpty().withMessage('Field is required').isString().withMessage('Must be a string'),
+	body('author').isLength({ max: 30 }).withMessage('Cannot exceed 30 characters'),
+	body('subject').optional().isString().withMessage('Must be a string'),
 	body('dueDate').optional({ checkFalsy: true }).isISO8601().withMessage('Must be a Date string'),
 	async (req, res) => {
 		const errors = myValidationResult(req);
@@ -103,8 +125,8 @@ app.post('/homeworks',
 			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
 
-		const { title, detail, subject, dueDate } = req.body;
-		const date = new Date(dueDate);
+		const { title, detail, author, subject, dueDate } = req.body;
+		const date = dueDate ? new Date(dueDate) : null;
 
 		// Probably not needed
 
@@ -118,17 +140,13 @@ app.post('/homeworks',
 		let create_result;
 		try {
 			create_result = await prisma.homework.create({
-				data: { title, subId: subject, detail, dueDate: date, author: (<any>req)['user_id'] },
+				data: { title, subId: subject, detail, dueDate: date, authorNickname: author },
 			});
 			logger.info(`Created homework with following data: ${JSON.stringify(create_result, null, '\t')}`);
 		} catch (err: any) {
 			return res.status(500).send({ message: `Error: ${err.message}` });
 		}
-		const create_result_with_author = await prisma.homework.findUnique({
-			where: { id: create_result.id },
-			include: { author: true }
-		});
-		if (create_result.dueDate) scheduleDeleteJobs(create_result_with_author);
+		if (create_result.dueDate) scheduleDeleteJobs(create_result);
 		return res.status(201).send(create_result);
 	}
 );
@@ -136,7 +154,7 @@ app.post('/homeworks',
 
 // edit homework
 app.patch('/homeworks/:id',
-	auth,
+	// auth,
 	param('id').isInt().withMessage('Must be an integer'),
 	body('title').isString(),
 	body('detail').isString(),
@@ -153,7 +171,7 @@ app.patch('/homeworks/:id',
 			res.status(400).send({ message: 'Invalid Date', field: 'dueDate' });
 			return;
 		}
-		const id = +req.params.id;
+		const id = req.params.id;
 
 		// prisma.update
 		let update_result;
@@ -173,16 +191,16 @@ app.patch('/homeworks/:id',
 
 // delete homework
 app.delete('/homeworks/:id',
-	auth,
-	param('id').isInt().withMessage('Must be an integer'),
+	// auth,
+	param('id').isString().withMessage('Must be a string'),
 	async (req, res) => {
 		const errors = myValidationResult(req);
 		if (!errors.isEmpty()) {
 			return res.status(400).json(errors.array({ onlyFirstError: true })[0]);
 		}
-		const id = +req.params.id;
+		const id = req.params.id;
 
-		const hw = await prisma.homework.findFirst({ where: { id: id, deletedAt: includeDeletedCondition(<any>req.query.withDeleted) } });
+		const hw = await prisma.homework.findFirst({ where: { id: id, deletedAt: null } });
 		if (!hw) res.sendStatus(404);
 		else {
 			await prisma.homework.delete({ where: { id: hw.id } });
@@ -212,34 +230,34 @@ app.delete('/homeworks', (req, res) => {
 
 // external resources
 
-app.get('/users/:id', async (req, res) => {
-	let { discordId, discordAccessToken: token, discordExpiresIn: expiresIn, discordRefreshedAt: refreshedAt } = await prisma.user.findUnique({
-		select: {
-			discordId: true,
-			discordAccessToken: true,
-			updatedAt: true,
-			discordExpiresIn: true,
-			discordRefreshedAt: true,
-		},
-		where: {
-			id: req.params.id
-		}
-	});
-	if (addSeconds(refreshedAt, expiresIn) < new Date()) {
-		({ discordAccessToken: token } = await refreshToken(discordId));
-	}
-	const { data } = await axios.get('https://discord.com/api/users/@me', {
-		headers: {
-			Authorization: `Bearer ${token}`
-		}
-	});
+// app.get('/users/:id', async (req, res) => {
+// 	let { discordId, discordAccessToken: token, discordExpiresIn: expiresIn, discordRefreshedAt: refreshedAt } = await prisma.user.findUnique({
+// 		select: {
+// 			discordId: true,
+// 			discordAccessToken: true,
+// 			updatedAt: true,
+// 			discordExpiresIn: true,
+// 			discordRefreshedAt: true,
+// 		},
+// 		where: {
+// 			id: req.params.id
+// 		}
+// 	});
+// 	if (addSeconds(refreshedAt, expiresIn) < new Date()) {
+// 		({ discordAccessToken: token } = await refreshToken(discordId));
+// 	}
+// 	const { data } = await axios.get('https://discord.com/api/users/@me', {
+// 		headers: {
+// 			Authorization: `Bearer ${token}`
+// 		}
+// 	});
 
-	res.send({
-		discordId: discordId,
-		tag: `${data.username}#${data.discriminator}`,
-		banner: data.banner,
-		bannerColor: data.banner_color,
-		accentColor: data.accent_color,
-		avatarURL: `https://cdn.discordapp.com/avatars/${discordId}/${data.avatar}.png?size=1024`
-	});
-});
+// 	res.send({
+// 		discordId: discordId,
+// 		tag: `${data.username}#${data.discriminator}`,
+// 		banner: data.banner,
+// 		bannerColor: data.banner_color,
+// 		accentColor: data.accent_color,
+// 		avatarURL: `https://cdn.discordapp.com/avatars/${discordId}/${data.avatar}.png?size=1024`
+// 	});
+// });
