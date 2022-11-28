@@ -105,5 +105,5 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 
 export const add = async (interaction: ConsideringInteraction) => {
 	if (interaction.isCommand())
-		interaction.reply({ content: 'Please visit https://homework.krissada.com/', ephemeral: true });
+		interaction.reply({ content: 'Please visit https://hw.krissada.com/', ephemeral: true });
 };
