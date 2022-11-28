@@ -281,7 +281,7 @@ bot.on('interactionCreate', async interaction => {
 							label: 'Web App',
 							emoji: '✨',
 							style: 'LINK',
-							url: 'https://hw.krissada.com/dashboard#creation-form'
+							url: 'https://hw.krissada.com/'
 						}]
 					},
 					]
