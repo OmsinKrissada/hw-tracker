@@ -78,10 +78,10 @@ export const list = async (interaction: ConsideringInteraction, options?: { show
 		return `-------------------------------------------\n` +
 			`${new Date().valueOf() - hw.createdAt.valueOf() < 86400000 ? '<:new5:854041576442560523> ' : ''}${getBookIcon(hw.dueDate)} **${hw.title}**${showID ? ` | \`${hw.id}\`` : ''}\n\n` +
 			`${hw.detail ? `**Detail**: ${hw.detail}\n` : ''}` +
-			`**Subject**: ${hw.subId ? subjects.filter(s => s.subId == hw.subId)[0].name : 'None'}` +
+			`**Subject**: ${hw.subId ? subjects.filter(s => s.subId == hw.subId)[0]?.name : 'None'}` +
 			`${hw.dueDate && new Date(hw.dueDate).valueOf() !== 0 ? `\n\n**Due**: __${format(hw.dueDate, 'EEEEE d MMM yyyy HH:mm น.', { locale: th })}__ **(${formatDistanceToNow(hw.dueDate, { locale: th })})** ⏰` : ''}`;
 	}), 1050);
-	const pages = condensed.map((c): MessageOptions => ({ embeds: [{ title: `📚 Homework List`, description: c }] }));
+	const pages = condensed.map((c): MessageOptions => ({ embeds: [{ title: `📚 Homework List`, description: c + '-------------------------------------------\n**เพิ่มงานได้ที่ https://hw.krissada.com/**' }] }));
 
 	if (interaction.isCommand()) {
 		const prompt = await interaction.reply({
