@@ -102,7 +102,7 @@ export function scheduleDeleteJobs(hw: Homework) {
 	remindJobs.set(hw.id, remindJobsWithName);
 
 	const deleteJob = schedule.scheduleJob(hw.dueDate, async () => {
-		prisma.homework.update({ where: { id: hw.id }, data: { deletedAt: new Date() } });
+		await prisma.homework.update({ where: { id: hw.id }, data: { deletedAt: new Date() } });
 		logger.debug(`Auto-deleted ${hw.id}`);
 		hw_channel.send({
 			content: `Time's up! <@&${ConfigManager.hw_role}>`,

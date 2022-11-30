@@ -69,7 +69,7 @@ app.get('/homeworks',
 				dueDate: h.dueDate,
 				subject: h.subId ? {
 					id: h.subId,
-					name: subjects.filter(s => s.subId === h.subId)[0].name
+					name: subjects.filter(s => s.subId === h.subId)[0]?.name
 				} : null,
 				createdAt: h.createdAt,
 				deletedAt: h.deletedAt,
