@@ -26,15 +26,16 @@ app.use((req, res, next) => {
 });
 
 // CORS
-app.use((req, res, next) => {
-	const origin = req.get('origin');
-	const allowedOrigins = ['https://hw.krissada.com', 'http://192.168.1.39:8080', 'https://homework.krissada.com'];
-	if (allowedOrigins.includes(origin)) {
-		cors({ origin: origin })(req, res, next);
-	} else {
-		cors({ origin: '*' })(req, res, next);
-	}
-});
+// app.use((req, res, next) => {
+// 	const origin = req.get('origin');
+// 	const allowedOrigins = ['https://hw.krissada.com', 'http://192.168.1.39:8080', 'https://homework.krissada.com'];
+// 	if (allowedOrigins.includes(origin)) {
+// 		cors({ origin: origin })(req, res, next);
+// 	} else {
+// 		cors({ origin: '*' })(req, res, next);
+// 	}
+// });
+app.use(cors());
 
 // Check Content-Type
 app.use((req, res, next) => {
