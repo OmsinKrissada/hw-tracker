@@ -17,7 +17,7 @@ model Homework {
   createdAt      DateTime  @default(now()) @map("created_at")
   deletedAt      DateTime? @map("deleted_at")
   dueDate        DateTime? @map("due_date")
-  detail         String?   @db.VarChar(300)
+  detail         String?   @db.VarChar(600)
   authorNickname String    @map("author_nickname")
 
   @@map("homework")
