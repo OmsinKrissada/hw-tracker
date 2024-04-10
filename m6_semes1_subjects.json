@@ -1,0 +1,233 @@
+[
+	{
+		"subID": "ว30249",
+		"name": "ชีวโมเลกุลและสรีรวิทยามนุษย์",
+		"classes": [
+			{
+				"DoW": 1,
+				"period": 1,
+				"span": 2
+			},
+			{
+				"DoW": 4,
+				"period": 5,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ค30211",
+		"name": "คณิตขั้นสูง",
+		"classes": [
+			{
+				"DoW": 1,
+				"period": 3,
+				"span": 2
+			},
+			{
+				"DoW": 5,
+				"period": 5,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ว30209",
+		"name": "ฟิสิกส์ขั้นสูง",
+		"classes": [
+			{
+				"DoW": 1,
+				"period": 5,
+				"span": 1
+			},
+			{
+				"DoW": 3,
+				"period": 3,
+				"span": 2
+			},
+			{
+				"DoW": 4,
+				"period": 2,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ท30105",
+		"name": "ภาษาไทย",
+		"classes": [
+			{
+				"DoW": 1,
+				"period": 6,
+				"span": 1
+			},
+			{
+				"DoW": 4,
+				"period": 3,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "อ30219",
+		"name": "English for IELTS (มิสลภัสนันท์)",
+		"classes": [
+			{
+				"DoW": 1,
+				"period": 7,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ค30105",
+		"name": "คณิตพื้นฐาน",
+		"classes": [
+			{
+				"DoW": 2,
+				"period": 1,
+				"span": 2
+			}
+		]
+	},
+	{
+		"subID": "ว30229",
+		"name": "เคมีขั้นสูง",
+		"classes": [
+			{
+				"DoW": 2,
+				"period": 3,
+				"span": 2
+			},
+			{
+				"DoW": 3,
+				"period": 7,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "อ30217",
+		"name": "Creative English",
+		"classes": [
+			{
+				"DoW": 2,
+				"period": 5,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ส30105",
+		"name": "สังคมฯ",
+		"classes": [
+			{
+				"DoW": 2,
+				"period": 6,
+				"span": 1
+			},
+			{
+				"DoW": 5,
+				"period": 4,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "พ30105",
+		"name": "สุข & พละ",
+		"classes": [
+			{
+				"DoW": 2,
+				"period": 7,
+				"span": 1
+			},
+			{
+				"DoW": 4,
+				"period": 1,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ท30203",
+		"name": "การพูดในที่ประชุมชน",
+		"classes": [
+			{
+				"DoW": 3,
+				"period": 1,
+				"span": 1
+			},
+			{
+				"DoW": 5,
+				"period": 6,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "อ30105",
+		"name": "Basic English",
+		"classes": [
+			{
+				"DoW": 3,
+				"period": 2,
+				"span": 1
+			},
+			{
+				"DoW": 5,
+				"period": 3,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "อ30235",
+		"name": "ภาษาอังกฤษเชิงวิชาการ (ครูต่างชาติ)",
+		"classes": [
+			{
+				"DoW": 3,
+				"period": 5,
+				"span": 1
+			},
+			{
+				"DoW": 4,
+				"period": 4,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ง30229",
+		"name": "ทักษะผู้ประกอบการ",
+		"classes": [
+			{
+				"DoW": 3,
+				"period": 6,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ก00000",
+		"name": "แนะแนว",
+		"classes": [
+			{
+				"DoW": 4,
+				"period": 6,
+				"span": 1
+			}
+		]
+	},
+	{
+		"subID": "ศ30224",
+		"name": "ดนตรีศิลป์ศึกษา",
+		"classes": [
+			{
+				"DoW": 5,
+				"period": 2,
+				"span": 1
+			}
+		]
+	}
+]
